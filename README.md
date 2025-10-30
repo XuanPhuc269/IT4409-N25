@@ -2,7 +2,7 @@
 
 A modern, web-based Learning Management System designed to provide a seamless educational experience for students, instructors, and administrators.
 
-## ✨ Features
+## Features
 
 *   **User Authentication:** Secure login and registration for different user roles (Student, Instructor, Admin).
 *   **Course Catalog:** Browse and search for available courses.
@@ -11,15 +11,15 @@ A modern, web-based Learning Management System designed to provide a seamless ed
 *   **Interactive Learning:** Engage with course content through video lectures, documents, and quizzes.
 *   **Responsive Design:** A clean and intuitive user interface that works on desktops, tablets, and mobile devices.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 *   **Frontend:** React, Vite
-*   **Styling:** (e.g., Tailwind CSS, Material-UI)
-*   **State Management:** (e.g., Redux, Zustand)
-*   **Backend:** (e.g., Node.js/Express, Django, Ruby on Rails)
-*   **Database:** (e.g., MongoDB, PostgreSQL)
+*   **Styling:** Tailwind CSS, Material-UI
+*   **State Management:** Redux
+*   **Backend:** Node.js/Express
+*   **Database:** MongoDB
 
-## 🚀 Getting Started
+##  Getting Started
 
 To get a local copy up and running, follow these simple steps.
 
@@ -34,7 +34,7 @@ Make sure you have Node.js and npm installed on your system.
 
 1.  Clone the repository:
     ```sh
-    git clone https://github.com/your-username/lms-web.git
+    git clone https://github.com/XuanPhuc269/IT4409-N25.git
     ```
 2.  Navigate to the project directory:
     ```sh
