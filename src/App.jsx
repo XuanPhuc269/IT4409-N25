@@ -8,7 +8,7 @@ import Educator from './pages/educator/Educator'
 import Dashboard from './pages/educator/Dashboard'
 import AddCourse from './pages/educator/AddCourse'
 import MyCourses from './pages/educator/MyCourses'
-import Enrollments from './pages/educator/Enrollments'
+import StudentEnrolled from './pages/educator/StudentsEnrolled'
 import Player from './pages/student/Player'
 import Loading from './components/student/Loading'
 
@@ -27,7 +27,7 @@ const App = () => {
           <Route path='/educator' element={<Dashboard/>} />
           <Route path='add-course' element={<AddCourse/>} />
           <Route path='my-courses' element={<MyCourses/>} />
-          <Route path='student-enrolled' element={<Enrollments/>} />
+          <Route path='student-enrolled' element={<StudentEnrolled/>} />
         </Route>
       </Routes>
     </div>
