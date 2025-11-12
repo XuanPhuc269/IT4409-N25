@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React from 'react'
 import Companies from '../../components/student/Companies'
 import CourseSection from '../../components/student/CoursesSection'
@@ -14,5 +15,19 @@ const Home = () => {
     </div>
   )
 }
+=======
+import React from "react";
+import Hero from "../../components/student/Hero";
+import TestimonialsSection from "../../components/student/TestimonialsSection";
 
-export default Home
+const Home = () => {
+  return (
+    <div className="flex flex-col items-center space-y-7 text-center">
+      <Hero />
+      <TestimonialsSection />
+    </div>
+  );
+};
+>>>>>>> Stashed changes
+
+export default Home;
