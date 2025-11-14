@@ -1,18 +1,14 @@
-import React from 'react'
-import Companies from '../../components/student/Companies'
-import CourseSection from '../../components/student/CoursesSection'
-import CallToAction from '../../components/student/CallToAction'
-import Footer from '../../components/student/Footer'
+import React from "react";
+import Hero from "../../components/student/Hero";
+import TestimonialsSection from "../../components/student/TestimonialsSection";
 
 const Home = () => {
   return (
-    <div className='flex flex-col items-center space-y-7 text-center'>
-      <Companies/>
-      <CourseSection/>
-      <CallToAction/>
-      <Footer/>
+    <div className="flex flex-col items-center space-y-7 text-center">
+      <Hero />
+      <TestimonialsSection />
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
