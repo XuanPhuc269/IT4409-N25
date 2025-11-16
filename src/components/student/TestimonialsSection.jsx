@@ -12,7 +12,7 @@ const TestimonialsSection = () => {
         success, and how our <br /> platform has made a difference in their
         lives.
       </p>
-      <div className="grid grid-cols-auto gap-8 mt-14">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-14">
         {dummyTestimonial.map((testimonial, index) => (
           <div
             key={index}
