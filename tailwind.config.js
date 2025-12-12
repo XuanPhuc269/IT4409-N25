@@ -11,6 +11,15 @@ module.exports = {
         "course-deatails-heading-large": ["36px", "44px"],
         default: ["15px", "21px"],
       },
+      spacing: {
+        'section-height' : '500px',
+      },
+      maxWidth: {
+        'course-card': '424px'
+      },
+      boxShadow: {
+        'custom-card': '0px 4px 15px 2px rgba(0, 0, 0, 0.1)',
+      }
     },
   },
   plugins: [],
