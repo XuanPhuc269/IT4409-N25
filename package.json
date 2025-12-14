@@ -10,12 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.58.1",
     "@tailwindcss/vite": "^4.1.16",
     "humanize-duration": "^3.33.1",
     "quill": "^2.0.3",
     "rc-progress": "^4.0.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-router-dom": "^7.9.4",
     "react-simple-star-rating": "^5.1.7",
     "react-youtube": "^10.1.0",
