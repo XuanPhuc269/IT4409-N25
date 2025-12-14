@@ -19,9 +19,13 @@ const Dashboard = () => {
   return dashboardData ? (
     <div className='min-h-screen flex flex-col items-start justify-between gap-8 md:p-8 md:pb-0 p-4 pt-8 pb-0'>
       <div className='space-y-5'>
-        <div className='flex flex-wrap gap-5 items-center'>
+        <div className='grid grid-cols-1
+        sm:grid-cols-2
+        lg:grid-cols-3
+        gap-5
+        place-items-center'>
         <div className='flex items-center gap-3 shadow-card border border-blue-500
-        p-4 w-56 rounded-md'>
+        p-4 w-full max-w-xs'>
             <img src={assets.patients_icon} alt="patients_icon" />
             <div>
               <p className='text-2x1 font-medium text-gray-600'>{dashboardData.enrolledStudentsData.length}</p>
@@ -29,7 +33,7 @@ const Dashboard = () => {
             </div>
         </div>
         <div className='flex items-center gap-3 shadow-card border border-blue-500
-        p-4 w-56 rounded-md'>
+        p-4 w-full max-w-xs'>
             <img src={assets.appointments_icon} alt="patients_icon" />
             <div>
               <p className='text-2x1 font-medium text-gray-600'>{dashboardData.totalCourses}</p>
@@ -37,7 +41,7 @@ const Dashboard = () => {
             </div>
         </div>
         <div className='flex items-center gap-3 shadow-card border border-blue-500
-        p-4 w-56 rounded-md'>
+        p-4 w-full max-w-xs'>
             <img src={assets.earning_icon} alt="patients_icon" />
             <div>
               <p className='text-2x1 font-medium text-gray-600'>{currency}

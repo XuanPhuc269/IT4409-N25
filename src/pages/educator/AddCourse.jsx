@@ -182,7 +182,7 @@ useEffect(()=>{
           rounded-lg cursor-pointer' onClick={() => handleChapter('add')}>+ Add Chapter</div>
           {showPopup && (
               <div className='fixed inset-0 flex items-center justify-center
-            bg-gray-800 bg-opacity-50'>
+            bg-gray-800/60'>
               <div className="bg-white text-gray-700 p-4 rounded relative w-full
               max-w-80">
                 <h2 className="text-lg font-semibold mb-4">Add Lecture</h2>
