@@ -45,7 +45,6 @@ export const AppContextProvider = (props) => {
     );
     return humanizeDuration(time * 60 * 1000, { unit: ["h", "m"] });
   };
-
   const calculateNumberOfLectures = (course) => {
     let totalLectures = 0;
     course.courseContent.forEach((chapter) => {

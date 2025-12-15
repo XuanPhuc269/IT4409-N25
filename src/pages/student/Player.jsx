@@ -6,6 +6,7 @@ import Footer from "../../components/student/Footer";
 import Loading from "../../components/student/Loading";
 import { assets } from "../../assets/assets";
 import humanizeDuration from "humanize-duration";
+import YouTube from "react-youtube";
 
 const Player = () => {
   const { enrolledCourses, calculateChapterTime } = useContext(AppContext);
@@ -35,7 +36,7 @@ const Player = () => {
       <div className="p-4 sm:p-10 flex flex-col-reverse md:grid md:grid-cols-2 gap-10 md:px-36">
         {/* left column */}
         <div className="text-gray-800">
-          <h2 className="text-xl font-semibold">Course Structure</h2>
+          <h2 className="text-xl font-semibold">Course Structure </h2>
 
           <div className="pt-5">
             {courseData &&
@@ -79,7 +80,7 @@ const Player = () => {
                               false ? assets.blue_tick_icon : assets.play_icon
                             }
                             alt="play_icon"
-                            className="w-4 h-4 h-4 mt-1"
+                            className="w-4 h-4 mt-1"
                           />
                           <div className="flex items-center justify-between w-full text-gray-800 text-xs md:text-default">
                             <p>{lecture.lectureUrl}</p>
@@ -113,10 +114,34 @@ const Player = () => {
                 </div>
               ))}
           </div>
+          <div className="flex items-center gap-2 py-3 mt-10">
+            <h1 className="text-xl font-bold">Rate this Course:</h1>
+          </div>
         </div>
         {/* right column */}
-        <div></div>
+        <div className="md:mt-10">
+          {playerData ? (
+            <div>
+              <YouTube
+                videoId={playerData.lectureUrl.split("/").pop()}
+                iframeClassName="w-full aspect-video"
+              />
+              <div className="flex justify-between items-center mt-1">
+                <p>
+                  {playerData.chapter}.{playerData.lecture}{" "}
+                  {playerData.lectureTitle}
+                </p>
+                <button className="text-blue-600">
+                  {false ? "Compelted" : "Mark Complete"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <img src={courseData ? courseData.courseThumbnail : ""} alt="" />
+          )}
+        </div>
       </div>
+      <Footer />
     </>
   );
 };
