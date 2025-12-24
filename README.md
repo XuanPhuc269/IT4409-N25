@@ -45,6 +45,11 @@ Make sure you have Node.js and npm installed on your system.
     npm install
     ```
 
+## Backend Repository
+
+The backend for this project is located in a separate repository. You can find it here:
+[lms-web-server](https://github.com/XuanPhuc269/lms-web-server.git)
+
 ### Running the Application
 
 To start the development server, run the following command:
@@ -54,3 +59,7 @@ npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173) (or the port shown in your terminal) to view it in the browser.
+
+This is my test code
+
+
