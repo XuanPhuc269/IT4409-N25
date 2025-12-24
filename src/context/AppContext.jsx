@@ -46,7 +46,10 @@ export const AppContextProvider = (props) => {
     },[user])
 
     const value = {
-        allCourses, calculateRating
+        calculateRating,
+        isEducator: true,
+        currency: "$",
+        allCourses: dummyCourses,
     }
 
 
