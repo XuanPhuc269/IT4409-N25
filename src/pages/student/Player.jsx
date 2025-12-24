@@ -4,6 +4,7 @@ import { useContext } from "react";
 import { AppContext } from "../../context/AppContext";
 import Footer from "../../components/student/Footer";
 import Rating from "../../components/student/Rating";
+import CourseQnA from "../../components/student/CourseQ&A";
 import { assets } from "../../assets/assets";
 import humanizeDuration from "humanize-duration";
 import YouTube from "react-youtube";
