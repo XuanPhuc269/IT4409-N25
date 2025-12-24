@@ -6,7 +6,7 @@ const SearchBar = ({ data }) => {
   const [input, setInput] = useState(data ? data : "");
 
   const onSearchHandler = (e) => {
-    e.prevenDefault();
+    e.preventDefault();
     navigate("/course-list/" + input);
   };
 
