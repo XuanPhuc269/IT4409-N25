@@ -14,8 +14,11 @@ import StudentsEnrolled from './pages/educator/StudentsEnrolled'
 import Navbar from './components/student/Navbar'
 import "quill/dist/quill.snow.css"
 const App = () => {
+  const isEducatorRoute = useMatch("/educator/*");
+
   return (
-    <div>
+    <div className="text-default min-h-screen bg-white">
+      {!isEducatorRoute && <Navbar />}
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/course-list' element={<CoursesList />} />
@@ -32,7 +35,7 @@ const App = () => {
         </Route>
       </Routes>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;
