@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { assets } from "../../assets/assets/assets";
+import { assets } from "../../assets/assets";
 import { Link } from "react-router-dom";
 import { useClerk, UserButton, useUser } from "@clerk/clerk-react";
 import { AppContext } from "../../context/AppContext";
