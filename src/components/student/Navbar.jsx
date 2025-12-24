@@ -1,9 +1,10 @@
 import React, { useContext } from "react";
-import { assets } from "../../assets/assets/assets";
-import { Link } from "react-router-dom";
+import { assets } from "../../assets/assets";
+import { Link, useLocation } from "react-router-dom";
 import { useClerk, UserButton, useUser } from "@clerk/clerk-react";
 const Navbar = () => {
   //const { navigate } = useContext(AppContext);
+  const location = useLocation();
   const isCourseListPage = location.pathname.includes("/course-list");
   const { openSignIn } = useClerk();
   const { user } = useUser();
