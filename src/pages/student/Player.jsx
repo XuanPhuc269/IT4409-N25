@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useContext } from "react";
 import { AppContext } from "../../context/AppContext";
@@ -10,19 +10,22 @@ import humanizeDuration from "humanize-duration";
 import YouTube from "react-youtube";
 
 const Player = () => {
-  const { enrolledCourses, calculateChapterTime } = useContext(AppContext);
+  const { enrolledCourses, calculateRating,
+    calculateChapterTime,
+    calculateCourseDuration,
+    calculateNumberOfLectures,
+    currency, } = useContext(AppContext);
   const { courseId } = useParams();
   const [courseData, setCourseData] = useState(null);
   const [openSections, setOpenSections] = useState({});
   const [playerData, setPlayerData] = useState(null);
 
-  const getCourseData = () => {
-    enrolledCourses.map((course) => {
-      if (course._id === courseId) {
-        setCourseData(course);
-      }
-    });
-  };
+
+  const getCourseData = useCallback(() => {
+
+    const course = enrolledCourses.find((course) => course._id === courseId);
+    setCourseData(course);
+  }, [enrolledCourses, courseId]);
 
   const toggleSection = (index) => {
     setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -30,18 +33,28 @@ const Player = () => {
 
   useEffect(() => {
     getCourseData();
-  }, [enrolledCourses]);
+  }, [enrolledCourses, courseId]);
+
+
+  const youtubeOpts = {
+    height: "600px",
+    width: "100%",
+    playerVars: {
+      autoplay: 0,
+      controls: 1
+    },
+  };
 
   return (
     <>
-      <div className="p-4 sm:p-10 flex flex-col-reverse md:grid md:grid-cols-3 gap-10 md:px-36">
+      <div className="p-4 sm:p-10 flex flex-col-reverse md:grid md:grid-cols-3 gap-10">
         {/* left column */}
-        <div className="md:grid-cols-2">
+        <div className="md:col-span-2">
           {playerData ? (
-            <div>
+            <div className="w-full h-96 md:h-[500px] lg:h-[600px]">
               <YouTube
                 videoId={playerData.lectureUrl.split("/").pop()}
-                iframeClassName="w-full aspect-video"
+                opts={youtubeOpts}
               />
               <div className="flex justify-between items-center mt-1">
                 <p>
@@ -55,20 +68,20 @@ const Player = () => {
             </div>
           ) : (
             <img src={courseData ? courseData.courseThumbnail : ""} alt="" />
-          )}          
+          )}
 
           <div className="flex items-center gap-2 py-3 mt-10">
             <h3 className="text-xl font-semibold">Rate this Course:</h3>
-            <Rating initialValue={0}/>
+            <Rating initialValue={0} />
           </div>
 
           {playerData ? (
-            <CourseQnA 
+            <CourseQnA
               lectureTitle={playerData.lectureTitle}
               lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
             />
           ) : (
-              <p className="text-gray-500">Choose a lecture to watch comment.</p>
+            <p className="text-gray-500">Choose a lecture to watch comment.</p>
           )}
 
         </div>
@@ -90,9 +103,8 @@ const Player = () => {
                   >
                     <div className="flex items-center gap-2">
                       <img
-                        className={`transform transition-transform ${
-                          openSections[index] ? "rotate-180" : ""
-                        }`}
+                        className={`transform transition-transform ${openSections[index] ? "rotate-180" : ""
+                          }`}
                         src={assets.down_arrow_icon}
                         alt="arrow_icon"
                       />
@@ -107,9 +119,8 @@ const Player = () => {
                   </div>
 
                   <div
-                    className={`overflow-hidden transition-all duration-300 ${
-                      openSections[index] ? "max-h-96" : "max-h-0"
-                    }`}
+                    className={`overflow-hidden transition-all duration-300 ${openSections[index] ? "max-h-96" : "max-h-0"
+                      }`}
                   >
                     <ul className="list-disc md:pl-10 pl-4 pr-4 py-2 text-gray-600 border-t border-gray-300">
                       {chapter.chapterContent.map((lecture, i) => (
@@ -122,9 +133,9 @@ const Player = () => {
                             className="w-4 h-4 mt-1"
                           />
                           <div className="flex items-center justify-between w-full text-gray-800 text-xs md:text-default">
-                            <p>{lecture.lectureUrl}</p>
+                            <p>{lecture.lectureTitle}</p>
                             <div className="flex gap-2">
-                              {lecture.lec && (
+                              {!lecture.isPreviewFree && (
                                 <p
                                   onClick={() =>
                                     setPlayerData({

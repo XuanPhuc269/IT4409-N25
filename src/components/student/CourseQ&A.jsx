@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { assets } from "../assets/assets";
+import { assets } from "../../assets/assets";
 
 const CourseQnA = ({ lectureTitle, lectureIndex }) => {
   const [comments, setComments] = useState([
