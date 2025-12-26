@@ -13,6 +13,7 @@ const CourseDetail = () => {
   const [openSections, setOpenSections] = useState({});
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
   const [playerData, setPlayerData] = useState(null);
+  const [activeTab, setActiveTab] = useState("Overview");
 
   const {
     allCourses,
@@ -244,7 +245,7 @@ const CourseDetail = () => {
             </div>
 
             <button className="md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium">
-              {isAlreadyEnrolled ? "Already Enrolled" : "Enroll Now"}
+              {isAlreadyEnrolled ? "Go to course" : "Enroll Now"}
             </button>
 
             <div className="pt-6">

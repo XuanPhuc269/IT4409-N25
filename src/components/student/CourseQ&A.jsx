@@ -39,9 +39,7 @@ const CourseQnA = ({ lectureTitle, lectureIndex }) => {
   };
 
   return (
-    <div className="mt-8 border-t border-gray-200 pt-6">
-      <h3 className="text-xl font-bold text-gray-800 mb-4">Q&A</h3>
-
+    <div>
       <div className="flex gap-4 mb-8">
         <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0 flex items-center justify-center text-white font-bold">
            User

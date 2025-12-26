@@ -19,6 +19,7 @@ const Player = () => {
   const [courseData, setCourseData] = useState(null);
   const [openSections, setOpenSections] = useState({});
   const [playerData, setPlayerData] = useState(null);
+  const [activeTab, setActiveTab] = useState("Overview");
 
 
   const getCourseData = useCallback(() => {
@@ -45,13 +46,89 @@ const Player = () => {
     },
   };
 
+  const courseStructure = (
+    <div className="flex-1 overflow-y-auto max-h-[80vh] custom-scrollbar">
+      {courseData &&
+        courseData.courseContent.map((chapter, index) => (
+          <div
+            key={index}
+            className="border border-gray-300 bg-white mb-2 rounded"
+          >
+            <div
+              className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
+              onClick={() => toggleSection(index)}
+            >
+              <div className="flex items-center gap-2">
+                <img
+                  className={`transform transition-transform ${openSections[index] ? "rotate-180" : ""
+                    }`}
+                  src={assets.down_arrow_icon}
+                  alt="arrow_icon"
+                />
+                <p className="font-medium md:text-base text-sm">
+                  {chapter.chapterTitle}
+                </p>
+              </div>
+              <p className="text-sm md:text-default">
+                {chapter.chapterContent.length} lectures -{" "}
+                {calculateChapterTime(chapter)}
+              </p>
+            </div>
+
+            <div
+              className={`overflow-hidden transition-all duration-300 ${openSections[index] ? "max-h-96" : "max-h-0"
+                }`}
+            >
+              <ul className="list-disc md:pl-10 pl-4 pr-4 py-2 text-gray-600 border-t border-gray-300">
+                {chapter.chapterContent.map((lecture, i) => (
+                  <li key={i} className="flex items-center gap-2 py-1">
+                    <img
+                      src={
+                        false ? assets.blue_tick_icon : assets.play_icon
+                      }
+                      alt="play_icon"
+                      className="w-4 h-4 mt-1"
+                    />
+                    <div className="flex items-center justify-between w-full text-gray-800 text-xs md:text-default">
+                      <p>{lecture.lectureTitle}</p>
+                      <div className="flex gap-2">
+                        <p
+                          onClick={() =>
+                            setPlayerData({
+                              ...lecture,
+                              chapter: index + 1,
+                              lecture: i + 1,
+                            })
+                          }
+                          className="text-blue-500 cursor-pointer"
+                        >
+                          Watch
+                        </p>
+                        
+                        <p>
+                          {humanizeDuration(
+                            lecture.lectureDuration * 60 * 1000,
+                            { units: ["h", "m"] }
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+    </div>
+  )
+
   return (
     <>
-      <div className="p-4 sm:p-10 flex flex-col-reverse md:grid md:grid-cols-3 gap-10">
+      <div className="p-4 sm:p-10 flex flex-col xl:grid xl:grid-cols-3 gap-10">
         {/* left column */}
-        <div className="md:col-span-2">
+        <div className="xl:col-span-2">
           {playerData ? (
-            <div className="w-full h-96 md:h-[500px] lg:h-[600px]">
+            <div className="w-full min-h-96 md:h-[600px] lg:h-[600px]">
               <YouTube
                 videoId={playerData.lectureUrl.split("/").pop()}
                 opts={youtubeOpts}
@@ -70,102 +147,102 @@ const Player = () => {
             <img src={courseData ? courseData.courseThumbnail : ""} alt="" />
           )}
 
-          <div className="flex items-center gap-2 py-3 mt-10">
-            <h3 className="text-xl font-semibold">Rate this Course:</h3>
-            <Rating initialValue={0} />
-          </div>
+          {/* Tabs */}
+          <div className="mt-10">
+            {/* Header Tabs */}
+            <div className="flex border-b border-gray-200 overflow-x-auto">
+              {[
+                { name: "Overview" },
+                { name: "Q&A" },
+                { name: "Reviews" },
+                { name: "Structure", className: "xl:hidden" }
+              ]
+              .map((tab) => (
+                <button
+                  key={tab.name}
+                  onClick={() => setActiveTab(tab.name)}
+                  className={`py-2 px-6 text-sm font-semibold transition-colors duration-300 outline-none whitespace-nowrap ${tab.className}
+                    ${
+                      activeTab === tab.name
+                        ? "border-b-2 border-blue-600 text-blue-600"
+                        : "text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
+                    }
+                  `}
+                >
+                  {tab.name}
+                </button>
+              ))}
+            </div>
 
-          {playerData ? (
-            <CourseQnA
-              lectureTitle={playerData.lectureTitle}
-              lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
-            />
-          ) : (
-            <p className="text-gray-500">Choose a lecture to watch comment.</p>
-          )}
+            {/* Nội dung Tabs */}
+            <div className="py-6">
+              {/* Tab Overview */}
+              {activeTab === "Overview" && (
+                <div className="animate-fadeIn">
+                  <h3 className="text-xl font-bold mb-3">Course Description</h3>
+                  <div 
+                      className="text-gray-600 leading-relaxed rich-text"
+                      dangerouslySetInnerHTML={{__html: courseData?.courseDescription}} 
+                  />
+                  {!courseData?.courseDescription && (
+                      <p className="text-gray-500 italic">No description available for this course.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Tab Q&A */}
+              {activeTab === "Q&A" && (
+                <div className="animate-fadeIn">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Q&A</h3>
+                    {playerData ? (
+                      <CourseQnA
+                      lectureTitle={playerData.lectureTitle}
+                      lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
+                      />
+                    ) : (
+                      <p className="text-gray-500">Select a lecture to view Q&A.</p>
+                    )}
+                </div>
+              )}
+
+              {/* Tab Reviews */}
+              {activeTab === "Reviews" && (
+                <div className="animate-fadeIn space-y-4">
+                    <h3 className="text-xl font-bold">Student Reviews</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-700 font-medium">Rate this course:</span>
+                      <Rating initialValue={0} />
+                    </div>
+                    {playerData ? (
+                      <CourseQnA
+                      lectureTitle={playerData.lectureTitle}
+                      lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
+                      />
+                    ) : (
+                      <p className="text-gray-500">Select a lecture to view other reviews.</p>
+                    )}
+                </div>
+              )}
+
+              {/* Tab Structure */}
+              {activeTab === "Structure" && (
+                 <div className="animate-fadeIn xl:hidden">
+                    {courseStructure}
+                 </div>
+              )}
+              
+            </div>
+          </div>
 
         </div>
 
         {/* right column */}
-        <div className="md:col-span-1">
+        <div className="hidden xl:block xl:col-span-1">
           <h2 className="text-xl font-bold">Course Structure </h2>
-
-          <div className="flex-1 overflow-y-auto max-h-[80vh] custom-scrollbar">
-            {courseData &&
-              courseData.courseContent.map((chapter, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-300 bg-white mb-2 rounded"
-                >
-                  <div
-                    className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-                    onClick={() => toggleSection(index)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        className={`transform transition-transform ${openSections[index] ? "rotate-180" : ""
-                          }`}
-                        src={assets.down_arrow_icon}
-                        alt="arrow_icon"
-                      />
-                      <p className="font-medium md:text-base text-sm">
-                        {chapter.chapterTitle}
-                      </p>
-                    </div>
-                    <p className="text-sm md:text-default">
-                      {chapter.chapterContent.length} lectures -{" "}
-                      {calculateChapterTime(chapter)}
-                    </p>
-                  </div>
-
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ${openSections[index] ? "max-h-96" : "max-h-0"
-                      }`}
-                  >
-                    <ul className="list-disc md:pl-10 pl-4 pr-4 py-2 text-gray-600 border-t border-gray-300">
-                      {chapter.chapterContent.map((lecture, i) => (
-                        <li key={i} className="flex items-center gap-2 py-1">
-                          <img
-                            src={
-                              false ? assets.blue_tick_icon : assets.play_icon
-                            }
-                            alt="play_icon"
-                            className="w-4 h-4 mt-1"
-                          />
-                          <div className="flex items-center justify-between w-full text-gray-800 text-xs md:text-default">
-                            <p>{lecture.lectureTitle}</p>
-                            <div className="flex gap-2">
-                              {!lecture.isPreviewFree && (
-                                <p
-                                  onClick={() =>
-                                    setPlayerData({
-                                      ...lecture,
-                                      chapter: index + 1,
-                                      lecture: i + 1,
-                                    })
-                                  }
-                                  className="text-blue-500 cursor-pointer"
-                                >
-                                  Watch
-                                </p>
-                              )}
-                              <p>
-                                {humanizeDuration(
-                                  lecture.lectureDuration * 60 * 1000,
-                                  { units: ["h", "m"] }
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-          </div>
+          {courseStructure}
         </div>
       </div>
+
       <Footer />
     </>
   );
