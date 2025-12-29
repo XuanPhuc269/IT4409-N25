@@ -7,7 +7,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const Navbar = () => {
-  const { navigate, isEducator, backendURL, setIsEducator, getToken } = useContext(AppContext);
+  const { navigate, isEducator, setIsEducator, getToken } = useContext(AppContext);
   const location = useLocation();
   const isCourseListPage = location.pathname.includes("/course-list");
   const { openSignIn } = useClerk();
@@ -21,7 +21,7 @@ const Navbar = () => {
         return;
       } 
       const token = await getToken();
-      const {data} = await axios.get(`${backendURL}` + '/api/educator/update-role', {
+      const {data} = await axios.get('/api/educator/update-role', {
         headers: {
           Authorization: `Bearer ${token}`,
         }

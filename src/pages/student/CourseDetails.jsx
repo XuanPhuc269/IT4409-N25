@@ -23,14 +23,13 @@ const CourseDetail = () => {
     calculateCourseDuration,
     calculateNumberOfLectures,
     currency,
-    backendURL,
     userData,
     getToken
   } = useContext(AppContext);
 
   const fetchCourseData = async () => {
     try {
-      const { data } = await axios.get(`${backendURL}/api/course/${id}`);
+      const { data } = await axios.get(`/api/course/${id}`);
 
       if (data.success) {
         setCourseData(data.courseData);

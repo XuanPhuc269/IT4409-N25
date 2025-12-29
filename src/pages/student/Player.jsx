@@ -8,34 +8,120 @@ import CourseQnA from "../../components/student/CourseQ&A";
 import { assets } from "../../assets/assets";
 import humanizeDuration from "humanize-duration";
 import YouTube from "react-youtube";
+import { toast } from "react-toastify";
+import Loading from "../../components/student/Loading";
+import axios from "axios";
 
 const Player = () => {
   const { enrolledCourses, calculateRating,
     calculateChapterTime,
     calculateCourseDuration,
     calculateNumberOfLectures,
-    currency, } = useContext(AppContext);
+    currency, getToken, userData, fetchUserEnrolledCourses } = useContext(AppContext);
   const { courseId } = useParams();
   const [courseData, setCourseData] = useState(null);
   const [openSections, setOpenSections] = useState({});
   const [playerData, setPlayerData] = useState(null);
   const [activeTab, setActiveTab] = useState("Overview");
+  const [progressData, setProgressData] = useState(null);
+  const [initialRating, setInitialRating] = useState(0);
 
 
-  const getCourseData = useCallback(() => {
-
-    const course = enrolledCourses.find((course) => course._id === courseId);
-    setCourseData(course);
-  }, [enrolledCourses, courseId]);
+  const getCourseData = () => {
+    enrolledCourses.map((course) => {
+      if (course._id === courseId) {
+        setCourseData(course);
+        course.courseRatings.map((item) => {
+          if(item.userId === userData._id) {
+            setInitialRating(item.rating)
+          }
+        })
+      }
+    })
+  };
+  
 
   const toggleSection = (index) => {
     setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
   useEffect(() => {
-    getCourseData();
-  }, [enrolledCourses, courseId]);
+    if (userData) {
+      fetchUserEnrolledCourses();
+    }
+  }, [userData]);
 
+  useEffect(() => {
+    if (enrolledCourses.length > 0) {
+      getCourseData();
+    }
+  }, [enrolledCourses]);
+
+  const markLectureAsCompleted = async (lectureId) => {
+    try {
+      const token = await getToken();
+      const { data } = await axios.post('/api/user/update-course-progress', {courseId, lectureId},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        getCourseProgress();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
+
+  const getCourseProgress = async () => {
+    try {
+      const token = await getToken();
+      const { data } = await axios.post(
+        `/api/user/get-course-progress`, {courseId},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (data.success) {
+        setProgressData(data.progressData);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
+
+  const handleRate = async (rating) => {
+    try {
+      const token = await getToken();
+      const { data } = await axios.post('/api/course/add-rating', {
+        courseId,
+        rating
+      },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        fetchUserEnrolledCourses();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
 
   const youtubeOpts = {
     height: "600px",
@@ -62,7 +148,7 @@ const Player = () => {
                 <img
                   className={`transform transition-transform ${openSections[index] ? "rotate-180" : ""
                     }`}
-                  src={assets.down_arrow_icon}
+                  src={progressData && progressData.lectureCompleted.includes(lecture.lectureId) ? assets.blue_tick_icon : assets.play_icon}
                   alt="arrow_icon"
                 />
                 <p className="font-medium md:text-base text-sm">
@@ -104,7 +190,7 @@ const Player = () => {
                         >
                           Watch
                         </p>
-                        
+
                         <p>
                           {humanizeDuration(
                             lecture.lectureDuration * 60 * 1000,
@@ -122,7 +208,7 @@ const Player = () => {
     </div>
   )
 
-  return (
+  return courseData ? (
     <>
       <div className="p-4 sm:p-10 flex flex-col xl:grid xl:grid-cols-3 gap-10">
         {/* left column */}
@@ -130,7 +216,7 @@ const Player = () => {
           {playerData ? (
             <div className="w-full min-h-96 md:h-[600px] lg:h-[600px]">
               <YouTube
-                videoId={playerData.lectureUrl.split("/").pop()}
+                videoId={playerData.lectureUrl.split("/").pop().split("?")[0]}
                 opts={youtubeOpts}
               />
               <div className="flex justify-between items-center mt-1">
@@ -138,13 +224,13 @@ const Player = () => {
                   {playerData.chapter}.{playerData.lecture}{" "}
                   {playerData.lectureTitle}
                 </p>
-                <button className="text-blue-600">
-                  {false ? "Compelted" : "Mark Complete"}
+                <button onClick={ () => markLectureAsCompleted(playerData.lectureId)} className="text-blue-600">
+                  {progressData && progressData.lectureCompleted.includes(playerData.lectureId) ? "Completed" : "Mark Complete"}
                 </button>
               </div>
             </div>
           ) : (
-            <img src={courseData ? courseData.courseThumbnail : ""} alt="" />
+            courseData && <img src={courseData.courseThumbnail} alt="Course Thumbnail" />
           )}
 
           {/* Tabs */}
@@ -157,21 +243,20 @@ const Player = () => {
                 { name: "Reviews" },
                 { name: "Structure", className: "xl:hidden" }
               ]
-              .map((tab) => (
-                <button
-                  key={tab.name}
-                  onClick={() => setActiveTab(tab.name)}
-                  className={`py-2 px-6 text-sm font-semibold transition-colors duration-300 outline-none whitespace-nowrap ${tab.className}
-                    ${
-                      activeTab === tab.name
+                .map((tab) => (
+                  <button
+                    key={tab.name}
+                    onClick={() => setActiveTab(tab.name)}
+                    className={`py-2 px-6 text-sm font-semibold transition-colors duration-300 outline-none whitespace-nowrap ${tab.className}
+                    ${activeTab === tab.name
                         ? "border-b-2 border-blue-600 text-blue-600"
                         : "text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
-                    }
+                      }
                   `}
-                >
-                  {tab.name}
-                </button>
-              ))}
+                  >
+                    {tab.name}
+                  </button>
+                ))}
             </div>
 
             {/* Nội dung Tabs */}
@@ -180,12 +265,12 @@ const Player = () => {
               {activeTab === "Overview" && (
                 <div className="animate-fadeIn">
                   <h3 className="text-xl font-bold mb-3">Course Description</h3>
-                  <div 
-                      className="text-gray-600 leading-relaxed rich-text"
-                      dangerouslySetInnerHTML={{__html: courseData?.courseDescription}} 
+                  <div
+                    className="text-gray-600 leading-relaxed rich-text"
+                    dangerouslySetInnerHTML={{ __html: courseData?.courseDescription }}
                   />
                   {!courseData?.courseDescription && (
-                      <p className="text-gray-500 italic">No description available for this course.</p>
+                    <p className="text-gray-500 italic">No description available for this course.</p>
                   )}
                 </div>
               )}
@@ -194,43 +279,43 @@ const Player = () => {
               {activeTab === "Q&A" && (
                 <div className="animate-fadeIn">
                   <h3 className="text-xl font-bold text-gray-800 mb-4">Q&A</h3>
-                    {playerData ? (
-                      <CourseQnA
+                  {playerData ? (
+                    <CourseQnA
                       lectureTitle={playerData.lectureTitle}
                       lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
-                      />
-                    ) : (
-                      <p className="text-gray-500">Select a lecture to view Q&A.</p>
-                    )}
+                    />
+                  ) : (
+                    <p className="text-gray-500">Select a lecture to view Q&A.</p>
+                  )}
                 </div>
               )}
 
               {/* Tab Reviews */}
               {activeTab === "Reviews" && (
                 <div className="animate-fadeIn space-y-4">
-                    <h3 className="text-xl font-bold">Student Reviews</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700 font-medium">Rate this course:</span>
-                      <Rating initialValue={0} />
-                    </div>
-                    {playerData ? (
-                      <CourseQnA
+                  <h3 className="text-xl font-bold">Student Reviews</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-700 font-medium">Rate this course:</span>
+                    <Rating initialRating={initialRating} onRate={handleRate} />
+                  </div>
+                  {playerData ? (
+                    <CourseQnA
                       lectureTitle={playerData.lectureTitle}
                       lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
-                      />
-                    ) : (
-                      <p className="text-gray-500">Select a lecture to view other reviews.</p>
-                    )}
+                    />
+                  ) : (
+                    <p className="text-gray-500">Select a lecture to view other reviews.</p>
+                  )}
                 </div>
               )}
 
               {/* Tab Structure */}
               {activeTab === "Structure" && (
-                 <div className="animate-fadeIn xl:hidden">
-                    {courseStructure}
-                 </div>
+                <div className="animate-fadeIn xl:hidden">
+                  {courseStructure}
+                </div>
               )}
-              
+
             </div>
           </div>
 
@@ -244,8 +329,7 @@ const Player = () => {
       </div>
 
       <Footer />
-    </>
-  );
+    </>) : <Loading />;
 };
 
 export default Player;
