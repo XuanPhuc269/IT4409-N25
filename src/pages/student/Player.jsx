@@ -17,7 +17,7 @@ const Player = () => {
     calculateChapterTime,
     calculateCourseDuration,
     calculateNumberOfLectures,
-    currency, getToken, userData, fetchUserEnrolledCourses } = useContext(AppContext);
+    currency, getToken, userData, fetchUserEnrolledCourses, requireAuth } = useContext(AppContext);
   const { courseId } = useParams();
   const [courseData, setCourseData] = useState(null);
   const [openSections, setOpenSections] = useState({});
@@ -32,14 +32,14 @@ const Player = () => {
       if (course._id === courseId) {
         setCourseData(course);
         course.courseRatings.map((item) => {
-          if(item.userId === userData._id) {
+          if (item.userId === userData._id) {
             setInitialRating(item.rating)
           }
         })
       }
     })
   };
-  
+
 
   const toggleSection = (index) => {
     setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -57,10 +57,26 @@ const Player = () => {
     }
   }, [enrolledCourses]);
 
+  useEffect(() => {
+    if (userData && courseId) {
+      getCourseProgress();
+    }
+  }, [userData, courseId]);
+
   const markLectureAsCompleted = async (lectureId) => {
+    if (!requireAuth()) return;
     try {
+      // Optimistic update
+      setProgressData((prev) => {
+        const completed = new Set((prev?.lectureCompleted || []).map(String));
+        completed.add(String(lectureId));
+        return { ...(prev || { courseId, lectureCompleted: [] }), lectureCompleted: Array.from(completed) };
+      });
+
+      advanceToNextLecture();
+
       const token = await getToken();
-      const { data } = await axios.post('/api/user/update-course-progress', {courseId, lectureId},
+      const { data } = await axios.post('/api/user/update-course-progress', { courseId, lectureId },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -69,20 +85,34 @@ const Player = () => {
       );
       if (data.success) {
         toast.success(data.message);
-        getCourseProgress();
+        // Refetch progress after successful update to ensure data consistency
+        await getCourseProgress();
       } else {
         toast.error(data.message);
+        // Revert on failure
+        setProgressData((prev) => {
+          const completed = new Set((prev?.lectureCompleted || []).map(String));
+          completed.delete(String(lectureId));
+          return { ...prev, lectureCompleted: Array.from(completed) };
+        });
       }
     } catch (error) {
       toast.error(error.message);
+      // Revert on error
+      setProgressData((prev) => {
+        const completed = new Set((prev?.lectureCompleted || []).map(String));
+        completed.delete(String(lectureId));
+        return { ...prev, lectureCompleted: Array.from(completed) };
+      });
     }
   }
 
   const getCourseProgress = async () => {
+    if (!userData) return;
     try {
       const token = await getToken();
       const { data } = await axios.post(
-        `/api/user/get-course-progress`, {courseId},
+        `/api/user/get-course-progress`, { courseId },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -99,7 +129,43 @@ const Player = () => {
     }
   }
 
+  const isLectureCompleted = (lectureId) => {
+    const id = String(lectureId).trim();
+    const completed = (progressData?.lectureCompleted || []).map((x) => String(x).trim());
+    return completed.includes(id);
+  };
+
+  const advanceToNextLecture = () => {
+    if (!courseData || !playerData) return;
+    const currentChapterIdx = (playerData.chapter || 1) - 1;
+    const currentLectureIdx = (playerData.lecture || 1) - 1;
+
+    const chapters = courseData.courseContent || [];
+    if (!chapters[currentChapterIdx]) return;
+
+    const currentChapter = chapters[currentChapterIdx];
+    const lectures = currentChapter.chapterContent || [];
+
+    if (currentLectureIdx + 1 < lectures.length) {
+      const nextLecture = lectures[currentLectureIdx + 1];
+      setPlayerData({ ...nextLecture, chapter: currentChapterIdx + 1, lecture: currentLectureIdx + 2 });
+      return;
+    }
+
+    if (currentChapterIdx + 1 < chapters.length) {
+      const nextChapter = chapters[currentChapterIdx + 1];
+      if (nextChapter && nextChapter.chapterContent && nextChapter.chapterContent.length > 0) {
+        const firstLecture = nextChapter.chapterContent[0];
+        setPlayerData({ ...firstLecture, chapter: currentChapterIdx + 2, lecture: 1 });
+        return;
+      }
+    }
+
+    toast.info("You've completed all lectures in this course.");
+  };
+
   const handleRate = async (rating) => {
+    if (!requireAuth()) return;
     try {
       const token = await getToken();
       const { data } = await axios.post('/api/course/add-rating', {
@@ -146,10 +212,9 @@ const Player = () => {
             >
               <div className="flex items-center gap-2">
                 <img
-                  className={`transform transition-transform ${openSections[index] ? "rotate-180" : ""
-                    }`}
-                  src={progressData && progressData.lectureCompleted.includes(lecture.lectureId) ? assets.blue_tick_icon : assets.play_icon}
-                  alt="arrow_icon"
+                  className={`transform transition-transform ${openSections[index] ? "rotate-180" : ""}`}
+                  src={assets.down_arrow_icon}
+                  alt="toggle_section"
                 />
                 <p className="font-medium md:text-base text-sm">
                   {chapter.chapterTitle}
@@ -169,10 +234,8 @@ const Player = () => {
                 {chapter.chapterContent.map((lecture, i) => (
                   <li key={i} className="flex items-center gap-2 py-1">
                     <img
-                      src={
-                        false ? assets.blue_tick_icon : assets.play_icon
-                      }
-                      alt="play_icon"
+                      src={isLectureCompleted(lecture.lectureId) ? assets.blue_tick_icon : assets.play_icon}
+                      alt={isLectureCompleted(lecture.lectureId) ? "completed" : "play_icon"}
                       className="w-4 h-4 mt-1"
                     />
                     <div className="flex items-center justify-between w-full text-gray-800 text-xs md:text-default">
@@ -188,7 +251,7 @@ const Player = () => {
                           }
                           className="text-blue-500 cursor-pointer"
                         >
-                          Watch
+                          {isLectureCompleted(lecture.lectureId) ? "Review" : "Watch"}
                         </p>
 
                         <p>
@@ -218,13 +281,20 @@ const Player = () => {
               <YouTube
                 videoId={playerData.lectureUrl.split("/").pop().split("?")[0]}
                 opts={youtubeOpts}
+                onEnd={() => {
+                  if (playerData && !isLectureCompleted(playerData.lectureId)) {
+                    markLectureAsCompleted(playerData.lectureId);
+                  } else {
+                    advanceToNextLecture();
+                  }
+                }}
               />
               <div className="flex justify-between items-center mt-1">
                 <p>
                   {playerData.chapter}.{playerData.lecture}{" "}
                   {playerData.lectureTitle}
                 </p>
-                <button onClick={ () => markLectureAsCompleted(playerData.lectureId)} className="text-blue-600">
+                <button onClick={() => markLectureAsCompleted(playerData.lectureId)} className="text-blue-600">
                   {progressData && progressData.lectureCompleted.includes(playerData.lectureId) ? "Completed" : "Mark Complete"}
                 </button>
               </div>
@@ -239,9 +309,9 @@ const Player = () => {
             <div className="flex border-b border-gray-200 overflow-x-auto">
               {[
                 { name: "Overview" },
+                { name: "Course Content", className: "xl:hidden" },
                 { name: "Q&A" },
                 { name: "Reviews" },
-                { name: "Structure", className: "xl:hidden" }
               ]
                 .map((tab) => (
                   <button
@@ -272,6 +342,13 @@ const Player = () => {
                   {!courseData?.courseDescription && (
                     <p className="text-gray-500 italic">No description available for this course.</p>
                   )}
+                </div>
+              )}
+
+              {/* Tab Course Content */}
+              {activeTab === "Course Content" && (
+                <div className="animate-fadeIn xl:hidden">
+                  {courseStructure}
                 </div>
               )}
 
@@ -309,13 +386,6 @@ const Player = () => {
                 </div>
               )}
 
-              {/* Tab Structure */}
-              {activeTab === "Structure" && (
-                <div className="animate-fadeIn xl:hidden">
-                  {courseStructure}
-                </div>
-              )}
-
             </div>
           </div>
 
@@ -323,7 +393,7 @@ const Player = () => {
 
         {/* right column */}
         <div className="hidden xl:block xl:col-span-1">
-          <h2 className="text-xl font-bold">Course Structure </h2>
+          <h2 className="text-xl font-bold pb-4">Course content </h2>
           {courseStructure}
         </div>
       </div>

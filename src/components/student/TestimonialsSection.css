@@ -1,0 +1,23 @@
+.testimonials-slider {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    -webkit-mask-image: linear-gradient(to right, transparent, white 10%, white 90%, transparent);
+    mask-image: linear-gradient(to right, transparent, white 10%, white 90%, transparent);
+}
+
+.testimonials-track {
+    display: flex;
+    width: fit-content;
+    animation: scroll-testimonials 60s linear infinite;
+}
+
+@keyframes scroll-testimonials {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}

@@ -1,6 +1,6 @@
 import { createContext, useEffect, useState } from "react";
 import { dummyCourses } from "../assets/assets";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser, useClerk } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import humanizeDuration from "humanize-duration";
 import axios from "axios";
@@ -20,9 +20,20 @@ export const AppContextProvider = (props) => {
 
     const { getToken } = useAuth();
     const { user } = useUser();
+    const { openSignIn } = useClerk();
+
+    const requireAuth = (callback) => {
+        if (!user) {
+            openSignIn();
+            return false;
+        }
+        if (callback) {
+            callback();
+        }
+        return true;
+    };
 
     const fetchAllCourses = async () => {
-        console.log("Fetching all courses from backend");
         try {
             const {data} = await axios.get(`${backendURL}/course/all`);
             if (data.success) {
@@ -140,7 +151,9 @@ export const AppContextProvider = (props) => {
         if (user) {
             fetchUserData();
         } else {
-            console.log("No user signed in");
+            setUserData(null);
+            setEnrolledCourses([]);
+            setIsEducator(false);
         }
     }, [user])
 
@@ -157,7 +170,8 @@ export const AppContextProvider = (props) => {
         fetchUserEnrolledCourses,
         calculateCourseDuration,
         calculateNumberOfLectures,
-        backendURL: '/api', userData, setUserData, getToken, fetchAllCourses
+        backendURL: '/api', userData, setUserData, getToken, fetchAllCourses,
+        requireAuth
     };
 
     return (

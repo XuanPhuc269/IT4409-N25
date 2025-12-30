@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { dummyStudentEnrolled } from '../../assets/assets';
 import Loading from '../../components/student/Loading';
 import axios from 'axios';
+import { AppContext } from '../../context/AppContext';
 
 const StudentsEnrolled = () => {
   const { getToken, userData, isEducator } = React.useContext(AppContext);

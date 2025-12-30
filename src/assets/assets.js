@@ -102,7 +102,7 @@ export const dummyEducatorData = {
 }
 
 export const dummyTestimonial = [
-    {
+{
         name: 'Donald Jackman',
         role: 'SWE 1 @ Amazon',
         image: assets.profile_img_1,
@@ -123,6 +123,27 @@ export const dummyTestimonial = [
         rating: 4.5,
         feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
     },
+    {
+        name: 'Sarah Lee',
+        role: 'Product Manager @ Microsoft',
+        image: assets.profile_img2,
+        rating: 5,
+        feedback: 'The courses are top-notch. The platform is intuitive and the content is highly relevant to my career growth. Highly recommended!',
+    },
+    {
+        name: 'Michael Chen',
+        role: 'Data Scientist @ Netflix',
+        image: assets.profile_img3,
+        rating: 4.5,
+        feedback: 'A fantastic learning experience. The instructors are experts in their fields and the community is very supportive. I learned a lot.',
+    },
+    {
+        name: 'Emily White',
+        role: 'UX Designer @ Adobe',
+        image: assets.profile_img_1,
+        rating: 5,
+        feedback: 'This platform has been a game-changer for me. The hands-on projects helped me build a strong portfolio and land my dream job.',
+    }
 ];
 
 export const dummyDashboardData = {

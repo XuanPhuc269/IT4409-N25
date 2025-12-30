@@ -10,11 +10,10 @@ const Navbar = () => {
   const { navigate, isEducator, setIsEducator, getToken } = useContext(AppContext);
   const location = useLocation();
   const isCourseListPage = location.pathname.includes("/course-list");
-  const { openSignIn } = useClerk();
+  const { openSignIn, openSignUp } = useClerk();
   const { user } = useUser();
 
   const becomeEducator = async () => {
-    console.log("become educator clicked");
     try {
       if(isEducator){
         navigate("/educator");
@@ -62,12 +61,21 @@ const Navbar = () => {
         {user ? (
           <UserButton />
         ) : (
-          <button
-            onClick={() => openSignIn()}
-            className="bg-blue-600 text-white px-5 py-2 rounded-full"
-          >
-            Create Account
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => openSignUp()}
+              className="border-blue-500 text-blue-600 px-5 py-2 rounded-full"
+            >
+              Sign Up
+            </button>
+            <button
+              onClick={() => openSignIn()}
+              className="bg-blue-600 text-white px-5 py-2 rounded-full"
+            >
+              Sign In
+            </button>
+            
+          </div>
         )}
       </div>
       {/* For Phone Screens */}
@@ -83,9 +91,14 @@ const Navbar = () => {
         {user ? (
           <UserButton />
         ) : (
-          <button onClick={() => openSignIn()}>
-            <img src={assets.user_icon} alt="" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => openSignIn()} className="max-sm:text-xs bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full">
+              Sign In
+            </button>
+            <button onClick={() => openSignUp()} className="max-sm:text-xs border border-blue-600 text-blue-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full">
+              Sign Up
+            </button>
+          </div>
         )}
       </div>
     </div>

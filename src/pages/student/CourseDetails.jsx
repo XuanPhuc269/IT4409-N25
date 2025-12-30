@@ -24,7 +24,8 @@ const CourseDetail = () => {
     calculateNumberOfLectures,
     currency,
     userData,
-    getToken
+    getToken,
+    requireAuth
   } = useContext(AppContext);
 
   const fetchCourseData = async () => {
@@ -42,16 +43,14 @@ const CourseDetail = () => {
   };
 
   const enrolledCourse = async () => {
+    if (!requireAuth()) return;
     try {
-      if (!userData) {
-        return toast.warn("Login to Enroll")
-      }
       if (isAlreadyEnrolled) {
         return toast.info("Already enrolled in this course")
       }
 
       const token = await getToken();
-      const { data } = await axios.post(`${backendURL}/api/user/purchase`, {
+      const { data } = await axios.post(`/api/user/purchase`, {
         courseId: courseData._id
       }, {
         headers: {
@@ -84,8 +83,6 @@ const CourseDetail = () => {
   const toggleSection = (index) => {
     setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }));
   };
-
-  console.log("courseData", courseData);
 
   return courseData ? (
     <>

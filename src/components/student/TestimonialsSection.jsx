@@ -1,24 +1,28 @@
 import React from "react";
 import { assets, dummyTestimonial } from "../../assets/assets";
+import "./TestimonialsSection.css";
 
 const TestimonialsSection = () => {
+  const extendedTestimonials = [...dummyTestimonial, ...dummyTestimonial];
+
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div className="pb-14 px-8 md:px-0">
+    <div className="w-full py-14">
+      <div className="text-center px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-medium text-gray-800">
-          TestimonialsSection
+          Learner Testimonials
         </h2>
-        <p className="md:text-base text-gray-500 mt-3">
-          Hear from our learners as thay share their journeys of transformation,
-          success, and how our <br /> platform has made a difference in their
+        <p className="md:text-base text-gray-500 mt-3 max-w-3xl mx-auto">
+          Hear from our learners as they share their journeys of transformation,
+          success, and how our platform has made a difference in their
           lives.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-14">
-          {dummyTestimonial.map((testimonial, index) => (
+      </div>
+      <div className="testimonials-slider mt-14">
+        <div className="testimonials-track">
+          {extendedTestimonials.map((testimonial, index) => (
             <div
               key={index}
-              className="text-sm text-left border border-gray-500/30
-          pb-6 rounded-lg bg-white shadow-[0px_4px_15px_0px] shadow_black/5 overflow-hidden"
+              className="flex-shrink-0 w-[350px] sm:w-[400px] mx-4 text-sm text-left border border-gray-500/30 pb-6 rounded-lg bg-white shadow-custom-card overflow-hidden"
             >
               <div className="flex items-center gap-4 px-5 py-4 bg-gray-500/10">
                 <img
@@ -30,7 +34,7 @@ const TestimonialsSection = () => {
                   <h1 className="text-lg font-medium text-gray-800">
                     {testimonial.name}
                   </h1>
-                  <p className="text-gray-50-800/80">{testimonial.role}</p>
+                  <p className="text-gray-500/80">{testimonial.role}</p>
                 </div>
               </div>
               <div className="p-5 pb-7">

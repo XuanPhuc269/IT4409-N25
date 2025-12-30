@@ -1,0 +1,26 @@
+.logos-slider {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.logos-track {
+    display: flex;
+    width: fit-content;
+    animation: scroll 20s linear infinite;
+}
+
+.logos-track img {
+    height: 50px;
+    margin: 0 40px;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
