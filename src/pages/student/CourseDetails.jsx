@@ -94,7 +94,7 @@ const CourseDetail = () => {
         <div className="absolute top-0 left-0 w-full h-section-height -z-1 bg-gradient-to-b from-cyan-100"></div>
 
           {/* left col */}
-          <div className="max-w-xl z-10 text-gray-500">
+          <div className="z-10 text-gray-500 w-full md:flex-2 md:basis-3/5 lg:basis-1/2 md:max-w-none">
             <h1 className="md:text-course-deatails-heading-large text-course-deatails-heading-small font-semibold text-gray-800">
               {courseData.courseTitle}
             </h1>
@@ -223,7 +223,7 @@ const CourseDetail = () => {
           </div>
 
           {/* right col */}
-          <div className="max-w-course-card z-10 shadow-custom-card rounded-t md:rounded-none overflow-hidden bg-white min-w-[300px] sm:min-w-[420px]">
+          <div className="max-w-course-card z-10 shadow-custom-card rounded-t md:rounded-none overflow-hidden bg-white md:basis-2/5 lg:basis-1/3 min-w-[300px] sm:min-w-[420px]">
             {playerData ? (
               <YouTube
                 videoId={playerData.videoId}
