@@ -231,7 +231,7 @@ const AddCourse = () => {
             required
           />
         </div>
-        
+
         <div className="flex flex-col gap-1">
           <p>Course Description</p>
           <div ref={editorRef}></div>
@@ -273,7 +273,7 @@ const AddCourse = () => {
             </label>
           </div>
         </div>
-        
+
         <div className="flex flex-col gap-1">
           <p>Discount %</p>
           <input
@@ -317,7 +317,7 @@ const AddCourse = () => {
                   className="cursor-pointer"
                 />
               </div>
-              
+
               {!chapter.collapsed && (
                 <div className="p-4">
                   {chapter.chapterContent.map((lecture, lectureIndex) => (
@@ -342,7 +342,11 @@ const AddCourse = () => {
                         src={assets.cross_icon}
                         alt=""
                         onClick={() =>
-                          handleLecture("remove", chapter.chapterId, lectureIndex)
+                          handleLecture(
+                            "remove",
+                            chapter.chapterId,
+                            lectureIndex
+                          )
                         }
                         className="cursor-pointer"
                       />
@@ -358,7 +362,7 @@ const AddCourse = () => {
               )}
             </div>
           ))}
-          
+
           <div
             className="flex justify-center items-center bg-blue-100 p-2 rounded-lg cursor-pointer"
             onClick={() => handleChapter("add")}
@@ -371,7 +375,7 @@ const AddCourse = () => {
             <div className="fixed inset-0 flex items-center justify-center bg-gray-800/60 z-50">
               <div className="bg-white text-gray-700 p-4 rounded relative w-full max-w-80 max-h-[90vh] overflow-y-auto">
                 <h2 className="text-lg font-semibold mb-4">Add Lecture</h2>
-                
+
                 <div className="mb-2">
                   <p>Lecture Title</p>
                   <input
