@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 
 const AddCourse = () => {
-  const { getToken } = useContext(AppContext);
+  const { getToken, backendURL } = useContext(AppContext);
 
   const quillRef = useRef(null);
   const editorRef = useRef(null);
@@ -19,6 +19,8 @@ const AddCourse = () => {
   const [chapters, setChapters] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [currentChapterId, setCurrentChapterId] = useState(null);
+  const [showChapterPopup, setShowChapterPopup] = useState(false);
+  const [newChapterTitle, setNewChapterTitle] = useState('');
 
   const [lectureDetails, setLectureDetails] = useState(
     {
@@ -31,18 +33,7 @@ const AddCourse = () => {
 
   const handleChapter = (action, chapterId) => {
     if (action === 'add') {
-      const title = prompt('Enter Chapter Name:');
-      if (title) {
-        const newChapter = {
-          chapterId: uniqid(),
-          chapterTitle: title,
-          chapterContent: [],
-          collapsed: false,
-          chapterOrder: chapters.length > 0 ? chapters.slice(-1)[0].chapterOrder +
-            1 : 1,
-        };
-        setChapters([...chapters, newChapter]);
-      }
+      setShowChapterPopup(true);
     } else if (action === 'remove') {
       setChapters(chapters.filter((chapter) => chapter.chapterId !== chapterId));
     } else if (action === 'toggle') {
@@ -52,6 +43,20 @@ const AddCourse = () => {
         )
       );
     }
+  };
+
+  const addChapter = () => {
+    if (!newChapterTitle.trim()) return;
+    const newChapter = {
+      chapterId: uniqid(),
+      chapterTitle: newChapterTitle.trim(),
+      chapterContent: [],
+      collapsed: false,
+      chapterOrder: chapters.length > 0 ? chapters.slice(-1)[0].chapterOrder + 1 : 1,
+    };
+    setChapters([...chapters, newChapter]);
+    setNewChapterTitle('');
+    setShowChapterPopup(false);
   };
 
   const handleLecture = (action, chapterId, lectureIndex) => {
@@ -113,7 +118,7 @@ const AddCourse = () => {
       formData.append('image', image);
 
       const token = await getToken();
-      const { data } = await axios.post('/api/educator/add-course', formData, {
+      const { data } = await axios.post(`${backendURL}/educator/add-course`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -222,6 +227,38 @@ const AddCourse = () => {
           ))}
           <div className='flex justify-center items-center bg-blue-100 p-2
           rounded-lg cursor-pointer' onClick={() => handleChapter('add')}>+ Add Chapter</div>
+          {showChapterPopup && (
+            <div className='fixed inset-0 flex items-center justify-center bg-gray-800/60'>
+              <div className="bg-white text-gray-700 p-4 rounded relative w-full max-w-80">
+                <h2 className="text-lg font-semibold mb-4">Add Chapter</h2>
+                <div className="mb-2">
+                  <p>Chapter Title</p>
+                  <input
+                    type="text"
+                    className="mt-1 block w-full border rounded py-1 px-2"
+                    value={newChapterTitle}
+                    onChange={(e) => setNewChapterTitle(e.target.value)}
+                    placeholder="e.g., Introduction"
+                  />
+                </div>
+
+                <button
+                  type='button'
+                  className="w-full bg-blue-400 text-white px-4 py-2 rounded mt-2"
+                  onClick={addChapter}
+                >
+                  Add
+                </button>
+
+                <img
+                  onClick={() => { setShowChapterPopup(false); setNewChapterTitle(''); }}
+                  src={assets.cross_icon}
+                  className='absolute top-4 right-4 w-4 cursor-pointer'
+                  alt=""
+                />
+              </div>
+            </div>
+          )}
           {showPopup && (
             <div className='fixed inset-0 flex items-center justify-center
             bg-gray-800/60'>
