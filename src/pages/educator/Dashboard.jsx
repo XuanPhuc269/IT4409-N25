@@ -18,7 +18,6 @@ const Dashboard = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      console.log(data);
       if (data.success) {
         setDashboardData(data.dashboardData);
       } else {
@@ -64,7 +63,7 @@ const Dashboard = () => {
             <img src={assets.earning_icon} alt="patients_icon" />
             <div>
               <p className='text-2x1 font-medium text-gray-600'>{currency}
-              {dashboardData.totalEarnings}</p>
+              {(dashboardData.totalEarnings).toFixed(2)}</p>
               <p className='text-base text-gray-500'>Total Earnings</p>
             </div>
         </div>

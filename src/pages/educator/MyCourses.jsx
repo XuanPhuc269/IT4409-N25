@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { AppContext } from '../../context/AppContext'
 import Loading from '../../components/student/Loading'
 import axios from 'axios'
+import { toast } from 'react-toastify'
 
 const MyCourses = () => {
 
@@ -13,7 +14,7 @@ const MyCourses = () => {
     try {
       const token = await getToken();
       const { data } = await axios.get(
-        `${backendURL}/api/educator/courses`,
+        `${backendURL}/educator/courses`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

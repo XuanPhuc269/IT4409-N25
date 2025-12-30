@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { dummyStudentEnrolled } from '../../assets/assets';
 import Loading from '../../components/student/Loading';
 import axios from 'axios';
 import { AppContext } from '../../context/AppContext';
+import { toast } from 'react-toastify';
 
 const StudentsEnrolled = () => {
   const { getToken, userData, isEducator, backendURL } = React.useContext(AppContext);
@@ -12,13 +12,13 @@ const StudentsEnrolled = () => {
     try {
       const token = await getToken();
       const { data } = await axios.get(
-        `${backendURL}/api/educator/enrolled-students`,
+        `${backendURL}/educator/enrolled-students`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
       if (data.success) {
-        setEnrolledStudents(data.enrollments.reverse())
+        setEnrolledStudents(data.enrolledStudents);
       } else {
         toast.error(data.message);
       }
