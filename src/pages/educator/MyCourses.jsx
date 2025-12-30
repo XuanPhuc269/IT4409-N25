@@ -5,7 +5,7 @@ import axios from 'axios'
 
 const MyCourses = () => {
 
-  const { currency, allCourses, isEducator, getToken } = useContext(AppContext)
+  const { currency, allCourses, isEducator, getToken, backendURL } = useContext(AppContext)
 
   const [courses, setCourses] = useState(null)
 
@@ -13,7 +13,7 @@ const MyCourses = () => {
     try {
       const token = await getToken();
       const { data } = await axios.get(
-        `/api/educator/courses`,
+        `${backendURL}/api/educator/courses`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

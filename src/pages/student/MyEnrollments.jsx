@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 
 const MyEnrollments = () => {
-  const { enrolledCourses, calculateCourseDuration, navigate, userData, fetchUserEnrolledCourses, getToken, calculateNoOfLectures } =
+  const { enrolledCourses, calculateCourseDuration, navigate, userData, fetchUserEnrolledCourses, getToken, calculateNumberOfLectures, backendURL } =
     useContext(AppContext);
 
   const [progressArray, setProgressArray] = useState([]);
@@ -17,21 +17,18 @@ const MyEnrollments = () => {
       const tempProgressArray = await Promise.all(
         enrolledCourses.map(async (course) => {
           const { data } = await axios.post(
-            `/api/user/get-course-progress`, { courseId: course._id },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
+            `${backendURL}/user/get-course-progress`, { courseId: course._id },
+            { headers: { Authorization: `Bearer ${token}` } }
           );
-          let totalLectures = calculateNoOfLectures(course);
-          const lectureCompleted = data.progressData ? data.progressData.lectureCompleted.length : 0;
-          return {
-            lectureCompleted,
-            totalLectures,
-          };
+
+          const totalLectures = calculateNumberOfLectures(course);
+          const lectureCompleted = data
+            ? data.lectureCompleted.length
+            : 0;
+
+          return { lectureCompleted, totalLectures };
         })
-      )
+      );
       setProgressArray(tempProgressArray);
     } catch (error) {
       toast.error(error.message);
@@ -49,6 +46,7 @@ const MyEnrollments = () => {
       getCourseProgress();
     }
   }, [enrolledCourses]);
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -115,7 +113,7 @@ const MyEnrollments = () => {
                       className="px-3 sm:px-5 py-1.5 sm:py-2 bg-blue-600 max-sm:text-xs text-white"
                       onClick={() => navigate('/player/' + course._id)}
                     >
-                      {progressArray[index] && progressArray[index].lectureCompleted === progressArray[index].totalLectures ? 'Continue Learning' : 'Go to course'}
+                      {progressArray[index] && progressArray[index].lectureCompleted === progressArray[index].totalLectures ? 'Review' : 'Go to course'}
                     </button>
                   </td>
                 </tr>

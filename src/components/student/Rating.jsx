@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
-const Rating = ({ initialRaing, onRate }) => {
-  const [rating, setRating] = useState(initialRaing || 0);
+const Rating = ({ initialRating, onRate }) => {
+  const [rating, setRating] = useState(initialRating || 0);
 
   const handleRating = (value) => {
     setRating(value);
@@ -9,10 +9,11 @@ const Rating = ({ initialRaing, onRate }) => {
   };
 
   useEffect(() => {
-    if (initialRaing) {
-      setRating(initialRaing);
+    if (initialRating !== undefined) {
+      setRating(initialRating);
     }
-  }, [initialRaing]);
+  }, [initialRating]);
+
   return (
     <div>
       {Array.from({ length: 5 }, (_, index) => {
@@ -20,10 +21,7 @@ const Rating = ({ initialRaing, onRate }) => {
         return (
           <span
             key={index}
-            className={`text-xl sm:text-2xl
-          cursor-pointer transition-colors ${
-            startValue <= rating ? "text-yellow-500" : "text-gray-400"
-          }`}
+            className={`text-xl sm:text-2xl cursor-pointer transition-colors ${startValue <= rating ? "text-yellow-500" : "text-gray-400"}`}
             onClick={() => handleRating(startValue)}
           >
             &#9733;

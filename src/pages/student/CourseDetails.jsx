@@ -16,6 +16,8 @@ const CourseDetail = () => {
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
   const [playerData, setPlayerData] = useState(null);
   const [activeTab, setActiveTab] = useState("Overview");
+  const [showPreviewPopup, setShowPreviewPopup] = useState(false);
+  const [previewVideoId, setPreviewVideoId] = useState(null);
 
   const {
     calculateRating,
@@ -25,12 +27,14 @@ const CourseDetail = () => {
     currency,
     userData,
     getToken,
-    requireAuth
+    requireAuth,
+    backendURL,
+    navigate
   } = useContext(AppContext);
 
   const fetchCourseData = async () => {
     try {
-      const { data } = await axios.get(`/api/course/${id}`);
+      const { data } = await axios.get(`${backendURL}/course/${id}`);
 
       if (data.success) {
         setCourseData(data.courseData);
@@ -50,7 +54,7 @@ const CourseDetail = () => {
       }
 
       const token = await getToken();
-      const { data } = await axios.post(`/api/user/purchase`, {
+      const { data } = await axios.post(`${backendURL}/user/purchase`, {
         courseId: courseData._id
       }, {
         headers: {
@@ -181,13 +185,10 @@ const CourseDetail = () => {
                               <div className="flex gap-2">
                                 {lecture.isPreviewFree && (
                                   <p
-                                    onClick={() =>
-                                      setPlayerData({
-                                        videoId: lecture.lectureUrl
-                                          .split("/")
-                                          .pop(),
-                                      })
-                                    }
+                                    onClick={() => {
+                                      setPreviewVideoId(lecture.lectureUrl.split("/").pop().split("?")[0]);
+                                      setShowPreviewPopup(true);
+                                    }}
                                     className="text-blue-500 cursor-pointer"
                                   >
                                     Preview
@@ -287,7 +288,7 @@ const CourseDetail = () => {
                 </div>
               </div>
 
-              <button onClick={enrolledCourse} className="md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium">
+              <button onClick={ isAlreadyEnrolled ? () => navigate('/player/' + courseData._id) : enrolledCourse} className="md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium">
                 {isAlreadyEnrolled ? "Already Enrolled" : "Enroll Now"}
               </button>
 
@@ -306,6 +307,32 @@ const CourseDetail = () => {
             </div>
           </div>
         </div>
+      {showPreviewPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="relative bg-white p-4 rounded-lg w-full max-w-3xl">
+            <button
+              onClick={() => {
+                setShowPreviewPopup(false);
+                setPreviewVideoId(null);
+              }}
+              className="absolute -top-4 -right-4 bg-white rounded-full p-1"
+            >
+              <img src={assets.cross_icon} alt="close" className="w-3 h-3" />
+            </button>
+            <YouTube
+              videoId={previewVideoId}
+              opts={{
+                width: '100%',
+                height: '480',
+                playerVars: {
+                  autoplay: 1,
+                },
+              }}
+              iframeClassName="w-full aspect-video"
+            />
+          </div>
+        </div>
+      )}
       <Footer />
     </>
   ) : (

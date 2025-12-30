@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 export const AppContext = createContext();
 
 export const AppContextProvider = (props) => {
-    const backendURL = '/api';
+    const backendURL = import.meta.env.VITE_BACKEND_URL;
     const currency = import.meta.env.VITE_CURRENCY;
     const navigate = useNavigate();
 
@@ -35,7 +35,8 @@ export const AppContextProvider = (props) => {
 
     const fetchAllCourses = async () => {
         try {
-            const {data} = await axios.get(`${backendURL}/course/all`);
+            const { data } = await axios.get(`${backendURL}/course/all`);
+            console.log(data);
             if (data.success) {
                 setAllCourses(data.courses);
             } else {
@@ -170,7 +171,7 @@ export const AppContextProvider = (props) => {
         fetchUserEnrolledCourses,
         calculateCourseDuration,
         calculateNumberOfLectures,
-        backendURL: '/api', userData, setUserData, getToken, fetchAllCourses,
+        backendURL, userData, setUserData, getToken, fetchAllCourses,
         requireAuth
     };
 

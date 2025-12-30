@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useContext } from "react";
 import { AppContext } from "../../context/AppContext";
@@ -23,8 +23,10 @@ const Player = () => {
     currency,
     getToken,
     userData,
+    setUserData,
     fetchUserEnrolledCourses,
     requireAuth,
+    backendURL,
   } = useContext(AppContext);
   const { courseId } = useParams();
   const [courseData, setCourseData] = useState(null);
@@ -33,6 +35,14 @@ const Player = () => {
   const [activeTab, setActiveTab] = useState("Overview");
   const [progressData, setProgressData] = useState(null);
   const [initialRating, setInitialRating] = useState(0);
+  const inFlightRef = useRef(false);
+  const ratingInFlightRef = useRef(false);
+  // Add selected rating + review text state
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const playerRef = useRef(null);
+  const playbackIntervalRef = useRef(null);
+  const [initializedPlayer, setInitializedPlayer] = useState(false);
 
   const getCourseData = () => {
     enrolledCourses.map((course) => {
@@ -41,6 +51,8 @@ const Player = () => {
         course.courseRatings.map((item) => {
           if (item.userId === userData._id) {
             setInitialRating(item.rating);
+            setSelectedRating(item.rating);
+            setReviewText(item.review || "");
           }
         });
       }
@@ -69,52 +81,133 @@ const Player = () => {
     }
   }, [userData, courseId]);
 
-  const markLectureAsCompleted = async (lectureId) => {
-    if (!requireAuth()) return;
+  // Local cache helpers
+  const progressCacheKey = `${
+    userData ? userData._id : "anonymous"
+  }:progress:${courseId}`;
+  const playbackCacheKey = `${
+    userData ? userData._id : "anonymous"
+  }:playback:${courseId}`;
+
+  const loadCachedProgress = () => {
     try {
-      // Optimistic update
+      const raw = localStorage.getItem(progressCacheKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveCachedProgress = (progress) => {
+    try {
+      localStorage.setItem(progressCacheKey, JSON.stringify(progress));
+    } catch {}
+  };
+
+  const loadCachedPlayback = () => {
+    try {
+      const raw = localStorage.getItem(playbackCacheKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveCachedPlayback = (payload) => {
+    try {
+      localStorage.setItem(playbackCacheKey, JSON.stringify(payload));
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (!courseId) return;
+    const cached = loadCachedProgress();
+    if (cached) {
+      setProgressData(cached);
+    }
+    if (userData) {
+      getCourseProgress();
+    }
+  }, [userData, courseId]);
+
+  useEffect(() => {
+    if (!courseData || !courseId) return;
+
+    if (playerData) return;
+
+    const cached = loadCachedPlayback();
+
+    const chapters = courseData.courseContent || [];
+    if (!chapters.length) return;
+
+    if (cached && cached.lectureId) {
+      for (let ci = 0; ci < chapters.length; ci++) {
+        const ch = chapters[ci];
+        const lectures = ch.chapterContent || [];
+        for (let li = 0; li < lectures.length; li++) {
+          const lec = lectures[li];
+          if (
+            String(lec.lectureId).trim() === String(cached.lectureId).trim()
+          ) {
+            setPlayerData({ ...lec, chapter: ci + 1, lecture: li + 1 });
+            return;
+          }
+        }
+      }
+    }
+
+    const firstChapter = chapters[0];
+    if (
+      firstChapter &&
+      firstChapter.chapterContent &&
+      firstChapter.chapterContent.length > 0
+    ) {
+      const firstLecture = firstChapter.chapterContent[0];
+      setPlayerData({ ...firstLecture, chapter: 1, lecture: 1 });
+    }
+  }, [courseData, courseId]);
+
+  const markLectureAsCompleted = async (lectureId) => {
+    const originalId = lectureId; // giữ nguyên ID để khớp DB
+    if (isLectureCompleted(originalId) || inFlightRef.current) return;
+
+    inFlightRef.current = true;
+    try {
+      const currentProgress = progressData;
+
       setProgressData((prev) => {
-        const completed = new Set((prev?.lectureCompleted || []).map(String));
-        completed.add(String(lectureId));
-        return {
+        const completed = new Set(
+          (prev?.lectureCompleted || []).map((x) => String(x))
+        );
+        completed.add(String(originalId));
+        const next = {
           ...(prev || { courseId, lectureCompleted: [] }),
           lectureCompleted: Array.from(completed),
         };
+        saveCachedProgress(next);
+        return next;
       });
 
       advanceToNextLecture();
 
       const token = await getToken();
       const { data } = await axios.post(
-        "/api/user/update-course-progress",
-        { courseId, lectureId },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${backendURL}/user/update-course-progress`,
+        { courseId, lectureId: originalId },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (data.success) {
-        toast.success(data.message);
-        // Refetch progress after successful update to ensure data consistency
-        await getCourseProgress();
-      } else {
+
+      if (!data.success) {
+        setProgressData(currentProgress);
+        if (currentProgress) saveCachedProgress(currentProgress);
         toast.error(data.message);
-        // Revert on failure
-        setProgressData((prev) => {
-          const completed = new Set((prev?.lectureCompleted || []).map(String));
-          completed.delete(String(lectureId));
-          return { ...prev, lectureCompleted: Array.from(completed) };
-        });
+      } else {
+        data.userData && setUserData(data.userData);
       }
-    } catch (error) {
-      toast.error(error.message);
-      // Revert on error
-      setProgressData((prev) => {
-        const completed = new Set((prev?.lectureCompleted || []).map(String));
-        completed.delete(String(lectureId));
-        return { ...prev, lectureCompleted: Array.from(completed) };
-      });
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    } finally {
+      inFlightRef.current = false;
     }
   };
 
@@ -123,16 +216,24 @@ const Player = () => {
     try {
       const token = await getToken();
       const { data } = await axios.post(
-        `/api/user/get-course-progress`,
+        `${backendURL}/user/get-course-progress`,
         { courseId },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (data.success) {
-        setProgressData(data.progressData);
+        const server = data.progressData || { courseId, lectureCompleted: [] };
+        const cached = loadCachedProgress();
+
+        const mergedRaw = Array.from(
+          new Set([
+            ...(server.lectureCompleted || []).map((x) => String(x)),
+            ...(cached?.lectureCompleted || []).map((x) => String(x)),
+          ])
+        );
+
+        const merged = { courseId, lectureCompleted: mergedRaw };
+        setProgressData(merged);
+        saveCachedProgress(merged);
       } else {
         toast.error(data.message);
       }
@@ -142,11 +243,11 @@ const Player = () => {
   };
 
   const isLectureCompleted = (lectureId) => {
-    const id = String(lectureId).trim();
+    const idTrimmed = String(lectureId).trim();
     const completed = (progressData?.lectureCompleted || []).map((x) =>
       String(x).trim()
     );
-    return completed.includes(id);
+    return completed.includes(idTrimmed);
   };
 
   const advanceToNextLecture = () => {
@@ -190,30 +291,45 @@ const Player = () => {
     toast.info("You've completed all lectures in this course.");
   };
 
-  const handleRate = async (rating) => {
-    if (!requireAuth()) return;
+  const handleSubmitReview = async () => {
+    if (!requireAuth() || ratingInFlightRef.current) return;
+    if (!selectedRating || selectedRating < 1 || selectedRating > 5) {
+      toast.error("Please select a rating between 1 and 5.");
+      return;
+    }
+    ratingInFlightRef.current = true;
     try {
       const token = await getToken();
       const { data } = await axios.post(
-        "/api/course/add-rating",
-        {
-          courseId,
-          rating,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${backendURL}/user/add-rating`,
+        { courseId, rating: Number(selectedRating), review: reviewText.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
+
       if (data.success) {
         toast.success(data.message);
+        setInitialRating(Number(selectedRating));
+        // Merge/update current user's rating + review into courseData
+        setCourseData((prev) => {
+          if (!prev) return prev;
+          const nextRatings = (prev.courseRatings || []).filter(
+            (r) => r.userId !== userData._id
+          );
+          nextRatings.push({
+            userId: userData._id,
+            rating: Number(selectedRating),
+            review: reviewText.trim(),
+          });
+          return { ...prev, courseRatings: nextRatings };
+        });
         fetchUserEnrolledCourses();
       } else {
         toast.error(data.message);
       }
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      ratingInFlightRef.current = false;
     }
   };
 
@@ -225,6 +341,79 @@ const Player = () => {
       controls: 1,
     },
   };
+
+  const handleStateChange = (event) => {
+    const state = event.data; // -1: unstarted, 0: ended, 1: playing, 2: paused
+    const player = event.target;
+    if (state === 1) {
+      if (playbackIntervalRef.current)
+        clearInterval(playbackIntervalRef.current);
+      playbackIntervalRef.current = setInterval(() => {
+        try {
+          const seconds = player.getCurrentTime();
+          if (playerData && seconds != null) {
+            saveCachedPlayback({
+              courseId,
+              lectureId: playerData.lectureId,
+              seconds: Math.floor(seconds),
+            });
+          }
+        } catch {}
+      }, 3000);
+    } else if (state === 2) {
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
+      try {
+        const seconds = player.getCurrentTime();
+        if (playerData && seconds != null) {
+          saveCachedPlayback({
+            courseId,
+            lectureId: playerData.lectureId,
+            seconds: Math.floor(seconds),
+          });
+        }
+      } catch {}
+    } else if (state === 0) {
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
+    }
+  };
+
+  const handleReady = (event) => {
+    playerRef.current = event.target;
+    const cached = loadCachedPlayback();
+    if (!cached || !playerData) return;
+    try {
+      if (
+        String(cached.lectureId).trim() === String(playerData.lectureId).trim()
+      ) {
+        if (typeof cached.seconds === "number" && cached.seconds > 0) {
+          event.target.seekTo(cached.seconds, true);
+        }
+      }
+    } catch {}
+    setInitializedPlayer(true);
+  };
+
+  // Seek when playerData changes and player is already ready
+  useEffect(() => {
+    if (!playerRef.current || !playerData) return;
+    const cached = loadCachedPlayback();
+    if (
+      cached &&
+      String(cached.lectureId).trim() === String(playerData.lectureId).trim()
+    ) {
+      try {
+        if (typeof cached.seconds === "number" && cached.seconds > 0) {
+          playerRef.current.seekTo(cached.seconds, true);
+        }
+      } catch {}
+    }
+  }, [playerData]);
 
   const courseStructure = (
     <div className="flex-1 overflow-y-auto max-h-[80vh] custom-scrollbar">
@@ -318,31 +507,42 @@ const Player = () => {
         {/* left column */}
         <div className="xl:col-span-2">
           {playerData ? (
-            <div className="w-full min-h-96 md:h-[600px] lg:h-[600px]">
-              <YouTube
-                videoId={playerData.lectureUrl.split("/").pop().split("?")[0]}
-                opts={youtubeOpts}
-                onEnd={() => {
-                  if (playerData && !isLectureCompleted(playerData.lectureId)) {
-                    markLectureAsCompleted(playerData.lectureId);
-                  } else {
-                    advanceToNextLecture();
-                  }
-                }}
-              />
-              <div className="flex justify-between items-center mt-1">
-                <p>
+            <div>
+              <div className="w-full min-h-96 md:h-[600px] lg:h-[600px]">
+                <YouTube
+                  videoId={playerData.lectureUrl.split("/").pop().split("?")[0]}
+                  opts={youtubeOpts}
+                  onReady={handleReady}
+                  onStateChange={handleStateChange}
+                  onEnd={() => {
+                    if (
+                      playerData &&
+                      !isLectureCompleted(playerData.lectureId)
+                    ) {
+                      markLectureAsCompleted(playerData.lectureId);
+                    } else {
+                      advanceToNextLecture();
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex justify-between items-center mt-4 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <h3 className="text-xl font-bold text-gray-800">
                   {playerData.chapter}.{playerData.lecture}{" "}
                   {playerData.lectureTitle}
-                </p>
+                </h3>
                 <button
                   onClick={() => markLectureAsCompleted(playerData.lectureId)}
-                  className="text-blue-600"
+                  className={`px-4 py-2 rounded-md font-semibold text-white transition-colors ${
+                    isLectureCompleted(playerData.lectureId)
+                      ? "bg-green-500 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
+                  disabled={isLectureCompleted(playerData.lectureId)}
                 >
-                  {progressData &&
-                  progressData.lectureCompleted.includes(playerData.lectureId)
+                  {isLectureCompleted(playerData.lectureId)
                     ? "Completed"
-                    : "Mark Complete"}
+                    : "Mark as Complete"}
                 </button>
               </div>
             </div>
@@ -415,6 +615,8 @@ const Player = () => {
                     <CourseQnA
                       lectureTitle={playerData.lectureTitle}
                       lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
+                      lectureId={playerData.lectureId}
+                      courseId={courseId}
                     />
                   ) : (
                     <p className="text-gray-500">
@@ -426,24 +628,87 @@ const Player = () => {
 
               {/* Tab Reviews */}
               {activeTab === "Reviews" && (
-                <div className="animate-fadeIn space-y-4">
+                <div className="animate-fadeIn space-y-6">
                   <h3 className="text-xl font-bold">Student Reviews</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-700 font-medium">
-                      Rate this course:
-                    </span>
-                    <Rating initialRating={initialRating} onRate={handleRate} />
+
+                  {/* Summary stats */}
+                  <div className="text-gray-700">
+                    <span className="font-medium">Average:</span>{" "}
+                    {calculateRating(courseData)} / 5
+                    <span className="mx-2">•</span>
+                    <span className="font-medium">Total reviews:</span>{" "}
+                    {courseData.courseRatings.length}
                   </div>
-                  {playerData ? (
-                    <CourseQnA
-                      lectureTitle={playerData.lectureTitle}
-                      lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
-                    />
-                  ) : (
-                    <p className="text-gray-500">
-                      Select a lecture to view other reviews.
-                    </p>
-                  )}
+
+                  {/* Your rating + review input */}
+                  <div className="flex items-start gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-700 font-medium">
+                        Rate this course:
+                      </span>
+                      {/* Use selectedRating as controlled value */}
+                      <Rating
+                        initialRating={selectedRating}
+                        onRate={setSelectedRating}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <textarea
+                      className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-blue-500 transition resize-none"
+                      rows="3"
+                      placeholder="Write your review..."
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                    ></textarea>
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        onClick={handleSubmitReview}
+                        className="bg-blue-600 text-white px-5 py-2 rounded-md font-medium hover:bg-blue-700 transition"
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Reviews list */}
+                  <div className="space-y-4">
+                    {courseData.courseRatings.length === 0 && (
+                      <p className="text-gray-500">No reviews yet.</p>
+                    )}
+                    {courseData.courseRatings.map((r, idx) => (
+                      <div
+                        key={idx}
+                        className="border border-gray-200 rounded p-4"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">
+                            {r.userId === userData?._id ? "You" : r.userId}
+                          </span>
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <img
+                                key={i}
+                                src={
+                                  i < Math.floor(r.rating)
+                                    ? assets.star
+                                    : assets.star_blank
+                                }
+                                alt="star"
+                                className="w-3.5 h-3.5"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        {r.review && (
+                          <p className="mt-2 text-gray-700 text-sm">
+                            {r.review}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
