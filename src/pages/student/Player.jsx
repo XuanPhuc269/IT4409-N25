@@ -5,6 +5,7 @@ import { AppContext } from "../../context/AppContext";
 import Footer from "../../components/student/Footer";
 import Rating from "../../components/student/Rating";
 import CourseQnA from "../../components/student/CourseQ&A";
+import Quiz from "../../components/student/Quiz";
 import { assets } from "../../assets/assets";
 import humanizeDuration from "humanize-duration";
 import YouTube from "react-youtube";
@@ -13,11 +14,18 @@ import Loading from "../../components/student/Loading";
 import axios from "axios";
 
 const Player = () => {
-  const { enrolledCourses, calculateRating,
+  const {
+    enrolledCourses,
+    calculateRating,
     calculateChapterTime,
     calculateCourseDuration,
     calculateNumberOfLectures,
-    currency, getToken, userData, fetchUserEnrolledCourses, requireAuth } = useContext(AppContext);
+    currency,
+    getToken,
+    userData,
+    fetchUserEnrolledCourses,
+    requireAuth,
+  } = useContext(AppContext);
   const { courseId } = useParams();
   const [courseData, setCourseData] = useState(null);
   const [openSections, setOpenSections] = useState({});
@@ -26,20 +34,18 @@ const Player = () => {
   const [progressData, setProgressData] = useState(null);
   const [initialRating, setInitialRating] = useState(0);
 
-
   const getCourseData = () => {
     enrolledCourses.map((course) => {
       if (course._id === courseId) {
         setCourseData(course);
         course.courseRatings.map((item) => {
           if (item.userId === userData._id) {
-            setInitialRating(item.rating)
+            setInitialRating(item.rating);
           }
-        })
+        });
       }
-    })
+    });
   };
-
 
   const toggleSection = (index) => {
     setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -70,13 +76,18 @@ const Player = () => {
       setProgressData((prev) => {
         const completed = new Set((prev?.lectureCompleted || []).map(String));
         completed.add(String(lectureId));
-        return { ...(prev || { courseId, lectureCompleted: [] }), lectureCompleted: Array.from(completed) };
+        return {
+          ...(prev || { courseId, lectureCompleted: [] }),
+          lectureCompleted: Array.from(completed),
+        };
       });
 
       advanceToNextLecture();
 
       const token = await getToken();
-      const { data } = await axios.post('/api/user/update-course-progress', { courseId, lectureId },
+      const { data } = await axios.post(
+        "/api/user/update-course-progress",
+        { courseId, lectureId },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -105,14 +116,15 @@ const Player = () => {
         return { ...prev, lectureCompleted: Array.from(completed) };
       });
     }
-  }
+  };
 
   const getCourseProgress = async () => {
     if (!userData) return;
     try {
       const token = await getToken();
       const { data } = await axios.post(
-        `/api/user/get-course-progress`, { courseId },
+        `/api/user/get-course-progress`,
+        { courseId },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -127,11 +139,13 @@ const Player = () => {
     } catch (error) {
       toast.error(error.message);
     }
-  }
+  };
 
   const isLectureCompleted = (lectureId) => {
     const id = String(lectureId).trim();
-    const completed = (progressData?.lectureCompleted || []).map((x) => String(x).trim());
+    const completed = (progressData?.lectureCompleted || []).map((x) =>
+      String(x).trim()
+    );
     return completed.includes(id);
   };
 
@@ -148,15 +162,27 @@ const Player = () => {
 
     if (currentLectureIdx + 1 < lectures.length) {
       const nextLecture = lectures[currentLectureIdx + 1];
-      setPlayerData({ ...nextLecture, chapter: currentChapterIdx + 1, lecture: currentLectureIdx + 2 });
+      setPlayerData({
+        ...nextLecture,
+        chapter: currentChapterIdx + 1,
+        lecture: currentLectureIdx + 2,
+      });
       return;
     }
 
     if (currentChapterIdx + 1 < chapters.length) {
       const nextChapter = chapters[currentChapterIdx + 1];
-      if (nextChapter && nextChapter.chapterContent && nextChapter.chapterContent.length > 0) {
+      if (
+        nextChapter &&
+        nextChapter.chapterContent &&
+        nextChapter.chapterContent.length > 0
+      ) {
         const firstLecture = nextChapter.chapterContent[0];
-        setPlayerData({ ...firstLecture, chapter: currentChapterIdx + 2, lecture: 1 });
+        setPlayerData({
+          ...firstLecture,
+          chapter: currentChapterIdx + 2,
+          lecture: 1,
+        });
         return;
       }
     }
@@ -168,10 +194,12 @@ const Player = () => {
     if (!requireAuth()) return;
     try {
       const token = await getToken();
-      const { data } = await axios.post('/api/course/add-rating', {
-        courseId,
-        rating
-      },
+      const { data } = await axios.post(
+        "/api/course/add-rating",
+        {
+          courseId,
+          rating,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -187,14 +215,14 @@ const Player = () => {
     } catch (error) {
       toast.error(error.message);
     }
-  }
+  };
 
   const youtubeOpts = {
     height: "600px",
     width: "100%",
     playerVars: {
       autoplay: 0,
-      controls: 1
+      controls: 1,
     },
   };
 
@@ -212,7 +240,9 @@ const Player = () => {
             >
               <div className="flex items-center gap-2">
                 <img
-                  className={`transform transition-transform ${openSections[index] ? "rotate-180" : ""}`}
+                  className={`transform transition-transform ${
+                    openSections[index] ? "rotate-180" : ""
+                  }`}
                   src={assets.down_arrow_icon}
                   alt="toggle_section"
                 />
@@ -227,15 +257,24 @@ const Player = () => {
             </div>
 
             <div
-              className={`overflow-hidden transition-all duration-300 ${openSections[index] ? "max-h-96" : "max-h-0"
-                }`}
+              className={`overflow-hidden transition-all duration-300 ${
+                openSections[index] ? "max-h-96" : "max-h-0"
+              }`}
             >
               <ul className="list-disc md:pl-10 pl-4 pr-4 py-2 text-gray-600 border-t border-gray-300">
                 {chapter.chapterContent.map((lecture, i) => (
                   <li key={i} className="flex items-center gap-2 py-1">
                     <img
-                      src={isLectureCompleted(lecture.lectureId) ? assets.blue_tick_icon : assets.play_icon}
-                      alt={isLectureCompleted(lecture.lectureId) ? "completed" : "play_icon"}
+                      src={
+                        isLectureCompleted(lecture.lectureId)
+                          ? assets.blue_tick_icon
+                          : assets.play_icon
+                      }
+                      alt={
+                        isLectureCompleted(lecture.lectureId)
+                          ? "completed"
+                          : "play_icon"
+                      }
                       className="w-4 h-4 mt-1"
                     />
                     <div className="flex items-center justify-between w-full text-gray-800 text-xs md:text-default">
@@ -251,7 +290,9 @@ const Player = () => {
                           }
                           className="text-blue-500 cursor-pointer"
                         >
-                          {isLectureCompleted(lecture.lectureId) ? "Review" : "Watch"}
+                          {isLectureCompleted(lecture.lectureId)
+                            ? "Review"
+                            : "Watch"}
                         </p>
 
                         <p>
@@ -269,7 +310,7 @@ const Player = () => {
           </div>
         ))}
     </div>
-  )
+  );
 
   return courseData ? (
     <>
@@ -294,13 +335,21 @@ const Player = () => {
                   {playerData.chapter}.{playerData.lecture}{" "}
                   {playerData.lectureTitle}
                 </p>
-                <button onClick={() => markLectureAsCompleted(playerData.lectureId)} className="text-blue-600">
-                  {progressData && progressData.lectureCompleted.includes(playerData.lectureId) ? "Completed" : "Mark Complete"}
+                <button
+                  onClick={() => markLectureAsCompleted(playerData.lectureId)}
+                  className="text-blue-600"
+                >
+                  {progressData &&
+                  progressData.lectureCompleted.includes(playerData.lectureId)
+                    ? "Completed"
+                    : "Mark Complete"}
                 </button>
               </div>
             </div>
           ) : (
-            courseData && <img src={courseData.courseThumbnail} alt="Course Thumbnail" />
+            courseData && (
+              <img src={courseData.courseThumbnail} alt="Course Thumbnail" />
+            )
           )}
 
           {/* Tabs */}
@@ -312,21 +361,23 @@ const Player = () => {
                 { name: "Course Content", className: "xl:hidden" },
                 { name: "Q&A" },
                 { name: "Reviews" },
-              ]
-                .map((tab) => (
-                  <button
-                    key={tab.name}
-                    onClick={() => setActiveTab(tab.name)}
-                    className={`py-2 px-6 text-sm font-semibold transition-colors duration-300 outline-none whitespace-nowrap ${tab.className}
-                    ${activeTab === tab.name
+              ].map((tab) => (
+                <button
+                  key={tab.name}
+                  onClick={() => setActiveTab(tab.name)}
+                  className={`py-2 px-6 text-sm font-semibold transition-colors duration-300 outline-none whitespace-nowrap ${
+                    tab.className
+                  }
+                    ${
+                      activeTab === tab.name
                         ? "border-b-2 border-blue-600 text-blue-600"
                         : "text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
-                      }
+                    }
                   `}
-                  >
-                    {tab.name}
-                  </button>
-                ))}
+                >
+                  {tab.name}
+                </button>
+              ))}
             </div>
 
             {/* Nội dung Tabs */}
@@ -337,10 +388,14 @@ const Player = () => {
                   <h3 className="text-xl font-bold mb-3">Course Description</h3>
                   <div
                     className="text-gray-600 leading-relaxed rich-text"
-                    dangerouslySetInnerHTML={{ __html: courseData?.courseDescription }}
+                    dangerouslySetInnerHTML={{
+                      __html: courseData?.courseDescription,
+                    }}
                   />
                   {!courseData?.courseDescription && (
-                    <p className="text-gray-500 italic">No description available for this course.</p>
+                    <p className="text-gray-500 italic">
+                      No description available for this course.
+                    </p>
                   )}
                 </div>
               )}
@@ -362,7 +417,9 @@ const Player = () => {
                       lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
                     />
                   ) : (
-                    <p className="text-gray-500">Select a lecture to view Q&A.</p>
+                    <p className="text-gray-500">
+                      Select a lecture to view Q&A.
+                    </p>
                   )}
                 </div>
               )}
@@ -372,7 +429,9 @@ const Player = () => {
                 <div className="animate-fadeIn space-y-4">
                   <h3 className="text-xl font-bold">Student Reviews</h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-700 font-medium">Rate this course:</span>
+                    <span className="text-gray-700 font-medium">
+                      Rate this course:
+                    </span>
                     <Rating initialRating={initialRating} onRate={handleRate} />
                   </div>
                   {playerData ? (
@@ -381,14 +440,14 @@ const Player = () => {
                       lectureIndex={`${playerData.chapter}.${playerData.lecture}`}
                     />
                   ) : (
-                    <p className="text-gray-500">Select a lecture to view other reviews.</p>
+                    <p className="text-gray-500">
+                      Select a lecture to view other reviews.
+                    </p>
                   )}
                 </div>
               )}
-
             </div>
           </div>
-
         </div>
 
         {/* right column */}
@@ -399,7 +458,20 @@ const Player = () => {
       </div>
 
       <Footer />
-    </>) : <Loading />;
+      {showQuiz && playerData && playerData.quiz && (
+        <Quiz
+          quizData={playerData.quiz}
+          onComplete={() => {
+            setShowQuiz(false);
+            markLectureAsCompleted(playerData.lectureId);
+          }}
+          onCancel={() => setShowQuiz(false)}
+        />
+      )}
+    </>
+  ) : (
+    <Loading />
+  );
 };
 
 export default Player;
