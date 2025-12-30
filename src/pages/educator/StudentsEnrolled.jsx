@@ -5,14 +5,14 @@ import axios from 'axios';
 import { AppContext } from '../../context/AppContext';
 
 const StudentsEnrolled = () => {
-  const { getToken, userData, isEducator } = React.useContext(AppContext);
+  const { getToken, userData, isEducator, backendURL } = React.useContext(AppContext);
   const [enrolledStudents, setEnrolledStudents] = useState(null)
 
   const fetchEnrolledStudents = async () => {
     try {
       const token = await getToken();
       const { data } = await axios.get(
-        `/api/educator/enrolled-students`,
+        `${backendURL}/api/educator/enrolled-students`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

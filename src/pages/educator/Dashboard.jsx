@@ -7,17 +7,18 @@ import { toast } from 'react-toastify'
 
 const Dashboard = () => {
 
-  const { currency, getToken, isEducator } = useContext(AppContext)
+  const { currency, getToken, isEducator, backendURL } = useContext(AppContext)
   const [dashboardData, setDashboardData] = useState(null)
   
   const fetchDashboardData = async () => {
     try {
       const token = await getToken();
-      const { data } = await axios.get('/api/educator/dashboard', {
+      const { data } = await axios.get(`${backendURL}/educator/dashboard`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
+      console.log(data);
       if (data.success) {
         setDashboardData(data.dashboardData);
       } else {
