@@ -11,6 +11,7 @@ import YouTube from "react-youtube";
 import { toast } from "react-toastify";
 import Loading from "../../components/student/Loading";
 import axios from "axios";
+import { validateInput } from "../../utils/securityValidation";
 
 const Player = () => {
   const { enrolledCourses, calculateRating,
@@ -27,13 +28,14 @@ const Player = () => {
   const [initialRating, setInitialRating] = useState(0);
   const inFlightRef = useRef(false);
   const ratingInFlightRef = useRef(false);
-  // Add selected rating + review text state
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [reviewText, setReviewText] = useState("");
+
+  // FIX: declare missing refs/states for the YouTube player
   const playerRef = useRef(null);
   const playbackIntervalRef = useRef(null);
   const [initializedPlayer, setInitializedPlayer] = useState(false);
-
+  // Add selected rating + review text state
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
 
   const getCourseData = () => {
     enrolledCourses.map((course) => {
@@ -253,27 +255,45 @@ const Player = () => {
 
   const handleSubmitReview = async () => {
     if (!requireAuth() || ratingInFlightRef.current) return;
+    
     if (!selectedRating || selectedRating < 1 || selectedRating > 5) {
       toast.error("Please select a rating between 1 and 5.");
       return;
     }
+
+    // Validate review text if provided
+    if (reviewText.trim()) {
+      const validation = validateInput(reviewText, 1000);
+      if (!validation.isValid) {
+        toast.error(validation.error);
+        return;
+      }
+    }
+
     ratingInFlightRef.current = true;
     try {
       const token = await getToken();
       const { data } = await axios.post(
         `${backendURL}/user/add-rating`,
-        { courseId, rating: Number(selectedRating), review: reviewText.trim() },
+        { 
+          courseId, 
+          rating: Number(selectedRating), 
+          review: reviewText.trim() 
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (data.success) {
         toast.success(data.message);
         setInitialRating(Number(selectedRating));
-        // Merge/update current user's rating + review into courseData
         setCourseData(prev => {
           if (!prev) return prev;
           const nextRatings = (prev.courseRatings || []).filter(r => r.userId !== userData._id);
-          nextRatings.push({ userId: userData._id, rating: Number(selectedRating), review: reviewText.trim() });
+          nextRatings.push({ 
+            userId: userData._id, 
+            rating: Number(selectedRating), 
+            review: reviewText.trim() 
+          });
           return { ...prev, courseRatings: nextRatings };
         });
         fetchUserEnrolledCourses();
@@ -362,6 +382,17 @@ const Player = () => {
       } catch {}
     }
   }, [playerData]);
+
+  // Cleanup playback interval and playerRef on unmount
+  useEffect(() => {
+    return () => {
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
+      playerRef.current = null;
+    };
+  }, []);
 
   const courseStructure = (
     <div className="flex-1 overflow-y-auto max-h-[80vh] custom-scrollbar">
@@ -552,18 +583,15 @@ const Player = () => {
                 <div className="animate-fadeIn space-y-6">
                   <h3 className="text-xl font-bold">Student Reviews</h3>
 
-                  {/* Summary stats */}
                   <div className="text-gray-700">
                     <span className="font-medium">Average:</span> {calculateRating(courseData)} / 5
                     <span className="mx-2">•</span>
                     <span className="font-medium">Total reviews:</span> {courseData.courseRatings.length}
                   </div>
 
-                  {/* Your rating + review input */}
                   <div className="flex items-start gap-4">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-700 font-medium">Rate this course:</span>
-                      {/* Use selectedRating as controlled value */}
                       <Rating initialRating={selectedRating} onRate={setSelectedRating} />
                     </div>
                   </div>
@@ -575,11 +603,16 @@ const Player = () => {
                       placeholder="Write your review..."
                       value={reviewText}
                       onChange={(e) => setReviewText(e.target.value)}
+                      maxLength={1000}
                     ></textarea>
-                    <div className="mt-2 flex justify-end">
+                    <div className="mt-2 flex justify-between items-center">
+                      <span className="text-xs text-gray-500">
+                        {reviewText.length}/1000 characters
+                      </span>
                       <button
                         onClick={handleSubmitReview}
-                        className="bg-blue-600 text-white px-5 py-2 rounded-md font-medium hover:bg-blue-700 transition"
+                        className="bg-blue-600 text-white px-5 py-2 rounded-md font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!selectedRating}
                       >
                         Submit
                       </button>
@@ -594,7 +627,9 @@ const Player = () => {
                     {courseData.courseRatings.map((r, idx) => (
                       <div key={idx} className="border border-gray-200 rounded p-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">{r.userId === userData?._id ? "You" : r.userId}</span>
+                          <span className="text-sm text-gray-600">
+                            {r.userId === userData?._id ? "You" : r.userId}
+                          </span>
                           <div className="flex">
                             {[...Array(5)].map((_, i) => (
                               <img

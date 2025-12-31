@@ -3,11 +3,13 @@ import { assets } from "../../assets/assets";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { AppContext } from "../../context/AppContext";
+import { validateInput } from "../../utils/securityValidation";
 
 const CourseQnA = ({ lectureTitle, lectureIndex, lectureId, courseId }) => {
   const { backendURL, getToken, requireAuth, userData } = useContext(AppContext);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+
   useEffect(() => {
     const fetchComments = async () => {
       if (!lectureId) return;
@@ -26,21 +28,28 @@ const CourseQnA = ({ lectureTitle, lectureIndex, lectureId, courseId }) => {
   }, [lectureId, backendURL]);
 
   const handleSubmit = async () => {
-    if (!newComment.trim()) return;
     if (!requireAuth()) return;
+
+    // Validate input
+    const validation = validateInput(newComment, 500);
+    if (!validation.isValid) {
+      toast.error(validation.error);
+      return;
+    }
+
     try {
       const token = await getToken();
       const { data } = await axios.post(
         `${backendURL}/comment/add`,
-        { courseId, lectureId, text: newComment.trim() },
+        { courseId, lectureId, text: validation.sanitized },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (data.success) {
         setComments((prev) => [data.comment, ...(prev || [])]);
         setNewComment("");
-        toast.success("Đã gửi bình luận");
+        toast.success("Comment submitted successfully");
       } else {
-        toast.error(data.message || "Không thể gửi bình luận");
+        toast.error(data.message || "Failed to submit comment");
       }
     } catch (err) {
       const msg = err.response?.data?.message || err.message;
@@ -61,11 +70,16 @@ const CourseQnA = ({ lectureTitle, lectureIndex, lectureId, courseId }) => {
             placeholder="Comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
+            maxLength={500}
           ></textarea>
-          <div className="mt-2 flex justify-end">
+          <div className="mt-2 flex justify-between items-center">
+            <span className="text-xs text-gray-500">
+              {newComment.length}/500 characters
+            </span>
             <button
               onClick={handleSubmit}
-              className="bg-blue-600 text-white px-5 py-2 rounded-md font-medium hover:bg-blue-700 transition"
+              className="bg-blue-600 text-white px-5 py-2 rounded-md font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!newComment.trim()}
             >
               Send
             </button>
